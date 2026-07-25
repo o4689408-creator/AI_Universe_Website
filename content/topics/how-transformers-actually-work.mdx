@@ -1,0 +1,66 @@
+---
+title: "How Transformers Actually Work"
+subtitle: "The architecture behind every modern language model, explained from first principles."
+category: "AI Foundations"
+tags: ["transformers", "architecture", "deep learning"]
+authorId: "founder"
+publishedAt: "2026-06-02"
+updatedAt: "2026-06-02"
+readTimeMinutes: 14
+heroImageUrl: "/images/topics/transformers.svg"
+companionVideoId: "how-transformers-actually-work"
+sources:
+  - label: "Attention Is All You Need (Vaswani et al., 2017)"
+    url: "https://arxiv.org/abs/1706.03762"
+  - label: "The Illustrated Transformer"
+    url: "https://jalammar.github.io/illustrated-transformer/"
+relatedSlugs: ["inside-large-language-models"]
+---
+
+In 2017, a small team of researchers set out to solve a narrow problem in machine translation. What they built instead became the architecture underneath nearly every major AI system released since — from chatbots to image generators to code assistants.
+
+## Why the transformer mattered
+
+Before transformers, sequence models read text one word at a time, carrying context forward step by step. That worked, but it was slow to train and struggled to remember anything far back in a sentence. The transformer's core idea — attention — let a model look at every word in a sequence simultaneously and decide which ones mattered most to each other.
+
+<PullQuote>
+Attention doesn't process language in order — it processes it in relationship.
+</PullQuote>
+
+That single shift made models both faster to train and dramatically better at capturing long-range meaning, which is why the architecture scaled so well as it grew larger.
+
+## The core mechanism: self-attention
+
+Self-attention gives every word in a sentence a way to "look at" every other word and weigh how relevant each one is. When a model reads "the trophy didn't fit in the suitcase because it was too big," self-attention is what lets it correctly connect "it" back to "trophy" rather than "suitcase."
+
+<Callout title="Go deeper: queries, keys, and values">
+
+Each word is projected into three vectors: a query (what am I looking for?), a key (what do I contain?), and a value (what information do I offer?). A word's query is compared against every other word's key to produce attention scores, which are then used to blend the values into a new representation. Stack this across multiple "heads" running in parallel — multi-head attention — and the model can track several different kinds of relationships at once (grammar, meaning, coreference) simultaneously.
+
+</Callout>
+
+<Figure
+  src="/images/topics/transformers.svg"
+  alt="Diagram of attention connections between tokens in a sentence"
+  caption="A simplified view of self-attention: every token attends to every other token."
+/>
+
+## Stacking layers, building understanding
+
+A single attention layer captures simple relationships. Real models stack dozens of these layers, each one refining the representation a little further — early layers tend to capture syntax and local structure, while deeper layers build toward more abstract meaning.
+
+<VideoEmbed
+  videoId="how-transformers-actually-work"
+  caption="Watch the full breakdown on the AI Universe YouTube channel."
+/>
+
+## Why this architecture won
+
+Transformers scaled better than anything that came before them, largely because their core computation — matrix multiplication across an entire sequence at once — maps extremely well onto GPU hardware. That combination of architectural elegance and hardware fit is arguably the single biggest reason today's AI progress moved as fast as it did.
+
+## Key takeaways
+
+- Self-attention lets a model weigh the relevance of every word to every other word, all at once.
+- Multi-head attention tracks several types of relationships in parallel.
+- Stacked layers build from concrete syntax toward abstract meaning.
+- The architecture's fit with GPU hardware is a major reason it scaled so well.

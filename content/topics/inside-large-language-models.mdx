@@ -1,0 +1,65 @@
+---
+title: "Inside Large Language Models"
+subtitle: "What actually happens between your prompt and the model's response."
+category: "Models"
+tags: ["llms", "inference", "training"]
+authorId: "founder"
+publishedAt: "2026-06-18"
+updatedAt: "2026-06-18"
+readTimeMinutes: 16
+heroImageUrl: "/images/topics/llms.svg"
+companionVideoId: "inside-large-language-models"
+trending: true
+sources:
+  - label: "Language Models are Few-Shot Learners (Brown et al., 2020)"
+    url: "https://arxiv.org/abs/2005.14165"
+  - label: "Training Compute-Optimal Large Language Models (Hoffmann et al., 2022)"
+    url: "https://arxiv.org/abs/2203.15556"
+relatedSlugs: ["how-transformers-actually-work", "the-real-path-to-agi"]
+---
+
+Type a question into a chat window and a response appears in seconds. Underneath that simplicity is a multi-stage pipeline built over months of training and enormous computational cost — most of which is invisible the moment you hit send.
+
+## From text to tokens
+
+A model never sees words the way you do. Your prompt is first broken into tokens — chunks that might be whole words, parts of words, or punctuation — and each token is converted into a numerical vector the model can process mathematically.
+
+## Two very different phases: training and inference
+
+Training is where a model learns. It reads enormous amounts of text, repeatedly predicting the next token and adjusting billions of internal parameters based on how wrong its guess was. Inference is what happens when you actually use the model — no learning occurs, it's simply running the same fixed set of parameters forward to generate a response, one token at a time.
+
+<Callout title="Go deeper: why generation happens one token at a time">
+
+Each time the model produces a token, that token is fed back in as part of the input for producing the next one. This is why longer responses take visibly more time to generate, and why a model can occasionally "paint itself into a corner" — a single early token can constrain everything that follows, since the model has no way to go back and revise what it already generated.
+
+</Callout>
+
+<PullQuote>
+A language model doesn't retrieve an answer — it computes, one token at a time, the most probable continuation of everything that came before it.
+</PullQuote>
+
+## Where scale actually helps
+
+Bigger models trained on more data reliably get better at a wide range of tasks — but not evenly, and not forever. Researchers have found fairly predictable relationships between model size, training data volume, and resulting performance, which is part of why compute budgets and data quality have become as strategically important as the architecture itself.
+
+<Figure
+  src="/images/topics/llms.svg"
+  alt="Layered diagram representing model depth and scale"
+  caption="Model capability tends to scale with parameters, data, and compute — up to a point."
+/>
+
+## Why models sometimes get things confidently wrong
+
+A model generates the statistically most probable continuation of text — it has no built-in mechanism for checking whether that continuation is factually true. This is the root cause of what's commonly called "hallucination," and it's an active area of research rather than a solved problem.
+
+<VideoEmbed
+  videoId="inside-large-language-models"
+  caption="Watch the full breakdown on the AI Universe YouTube channel."
+/>
+
+## Key takeaways
+
+- Training teaches the model; inference is simply running what it already learned.
+- Text is generated one token at a time, each one conditioned on everything before it.
+- Scale reliably improves performance, but with diminishing and uneven returns.
+- Confident-sounding output is not the same as verified output.
