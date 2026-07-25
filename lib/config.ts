@@ -15,7 +15,11 @@ export const SITE_NAME = "AI Universe";
 export const SITE_DESCRIPTION =
   "A premium knowledge platform for understanding artificial intelligence — deep research, clear explanations, and documentary-style storytelling.";
 
+<<<<<<< HEAD
 export const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@ZynthicTech_AI";
+=======
+export const YOUTUBE_CHANNEL_URL = "https://youtube.com";
+>>>>>>> fc7e995d24da00b12bb20f05133420919820dc7a
 
 /**
  * "Follow us" destinations — your own social profiles, distinct from
@@ -26,6 +30,12 @@ export const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@ZynthicTech_AI";
 export const INSTAGRAM_URL = "https://instagram.com/aiuniverse";
 export const FACEBOOK_URL = "https://facebook.com/aiuniverse";
 export const LINKEDIN_URL = "https://linkedin.com/company/aiuniverse";
+<<<<<<< HEAD
 export const WHATSAPP_URL = "https://wa.me/+919643038097";
 
 export const CONTACT_EMAIL = "storyspere173@gmail.com";
+=======
+export const WHATSAPP_URL = "https://wa.me/10000000000";
+
+export const CONTACT_EMAIL = "hello@aiuniverse.com";
+>>>>>>> fc7e995d24da00b12bb20f05133420919820dc7a
