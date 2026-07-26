@@ -3,8 +3,8 @@ import { SITE_NAME } from "@/lib/config";
 
 export function Logo() {
   return (
-    <Link href="/" className="group flex items-center gap-2.5">
-      <span className="relative flex h-8 w-8 items-center justify-center">
+    <Link href="/" className="group flex min-w-0 shrink items-center gap-2 sm:gap-2.5">
+      <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
         <span
           className="absolute inset-0 rounded-full bg-accent/0 blur-md transition-colors duration-slow ease-out group-hover:bg-accent/25"
           aria-hidden="true"
@@ -28,7 +28,7 @@ export function Logo() {
           </g>
         </svg>
       </span>
-      <span className="text-heading-4 font-semibold tracking-tight text-text-primary">
+      <span className="truncate text-body-lg font-semibold tracking-tight text-text-primary sm:text-heading-4">
         {SITE_NAME}
       </span>
     </Link>

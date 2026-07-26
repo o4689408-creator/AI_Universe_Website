@@ -11,11 +11,19 @@
 
   html {
     @apply scroll-smooth;
+    /* Defense-in-depth: guarantees zero horizontal scroll site-wide
+       even if a future component ever miscalculates its width, rather
+       than relying solely on every component individually getting it
+       right. This does not mask real overflow bugs — content is still
+       fixed at the source (see e.g. StaggeredHeading) — this is a
+       backstop, not a substitute for that. */
+    @apply overflow-x-hidden;
   }
 
   body {
-    @apply bg-bg-base text-text-primary antialiased;
+    @apply bg-bg-base text-text-primary antialiased overflow-x-hidden;
     font-feature-settings: "rlig" 1, "calt" 1;
+    width: 100%;
   }
 
   /* Visible keyboard focus everywhere — never removed without replacement */
@@ -43,9 +51,27 @@
   /* leverage typographic decision in the design system. */
   .prose-reading {
     max-width: var(--content-width-reading);
+    overflow-wrap: break-word;
   }
 
   .content-wide {
     max-width: var(--content-width-wide);
+  }
+
+  /* Safe-area helpers for notch / dynamic-island / home-indicator
+     devices — additive to existing padding (used with e.g.
+     `pt-[max(1rem,env(safe-area-inset-top))]` at call sites where a
+     fixed/sticky element sits at a physical screen edge). */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
   }
 }

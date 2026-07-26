@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 interface StaggeredHeadingProps {
   text: string;
   className?: string;
@@ -29,15 +31,25 @@ export function StaggeredHeading({
   const words = text.split(" ");
 
   return (
-    <span className={className}>
+    <span className={cn("break-words", className)}>
       {words.map((word, index) => (
-        <span
-          key={`${word}-${index}`}
-          className="inline-block opacity-0 animate-blur-in-up will-change-[filter,transform,opacity]"
-          style={{ animationDelay: `${startDelayMs + index * staggerMs}ms` }}
-        >
-          {word}
-          {index < words.length - 1 ? "\u00A0" : ""}
+        <span key={`${word}-${index}`}>
+          <span
+            className="inline-block opacity-0 animate-blur-in-up will-change-[filter,transform,opacity]"
+            style={{ animationDelay: `${startDelayMs + index * staggerMs}ms` }}
+          >
+            {word}
+          </span>
+          {/* A genuine space as a sibling text node (not trapped inside
+              the inline-block span, and not a non-breaking space) —
+              this is what gives the browser an actual line-wrap
+              opportunity between words. Previously this used a
+              non-breaking space glued inside each preceding span with
+              zero whitespace between spans in the DOM, which meant the
+              entire heading had no valid wrap point anywhere and was
+              forced onto a single line regardless of viewport width —
+              a real, confirmed cause of mobile horizontal overflow. */}
+          {index < words.length - 1 ? " " : ""}
         </span>
       ))}
     </span>

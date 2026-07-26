@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Header } from "@/components/layout/Header";
@@ -8,6 +8,16 @@ import { getAllTopics } from "@/lib/content";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/config";
 import { noFlashThemeScript } from "@/lib/theme";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Lets the page draw behind the notch/dynamic island/home-indicator
+  // area on modern phones — paired with the safe-area-inset padding
+  // added to the Header and mobile menu (see globals.css and those
+  // components) so content is never obscured by hiding under it.
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

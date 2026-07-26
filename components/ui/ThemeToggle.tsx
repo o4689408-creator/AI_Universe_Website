@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { applyTheme, getStoredTheme, setStoredTheme, type Theme } from "@/lib/theme";
+import { useRipple } from "@/lib/hooks/useRipple";
+import { cn } from "@/lib/utils";
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("dark");
+  const [justToggled, setJustToggled] = useState(false);
+  const handleRipple = useRipple();
 
   // Read the real stored value after mount — the inline no-flash script
   // (see app/layout.tsx) already applied it to the DOM before paint;
@@ -18,16 +22,36 @@ export function ThemeToggle() {
     setTheme(next);
     applyTheme(next);
     setStoredTheme(next);
+    setJustToggled(true);
+    setTimeout(() => setJustToggled(false), 500);
   }
 
   return (
     <button
       type="button"
-      onClick={toggle}
+      onPointerDown={(event) => {
+        handleRipple(event);
+        toggle();
+      }}
       aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-      className="flex h-10 w-10 items-center justify-center rounded-md text-text-secondary transition-colors duration-fast hover:text-text-primary"
+      className="group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-md text-text-secondary transition-colors duration-fast hover:text-accent"
     >
-      {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+      <span
+        className={cn(
+          "pointer-events-none absolute inset-0 rounded-md bg-accent/0 transition-colors duration-slow",
+          justToggled && "bg-accent/15"
+        )}
+        aria-hidden="true"
+      />
+      <span
+        className={cn(
+          "relative inline-flex transition-transform duration-slow ease-out",
+          justToggled ? "rotate-[360deg] scale-110" : "rotate-0 scale-100",
+          "group-hover:rotate-45"
+        )}
+      >
+        {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+      </span>
     </button>
   );
 }

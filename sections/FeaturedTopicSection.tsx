@@ -26,7 +26,7 @@ export function FeaturedTopicSection({ topics }: FeaturedTopicSectionProps) {
   if (!featured) return null;
 
   return (
-    <Section>
+    <Section className="overflow-hidden">
       <Container>
         <AnimatedReveal className="mb-6 flex flex-col gap-2">
           <span className="text-label uppercase text-accent">Featured</span>

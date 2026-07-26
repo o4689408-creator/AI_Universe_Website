@@ -1,13 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { CommandPalette } from "@/components/ui/CommandPalette";
 import { Logo } from "@/components/layout/Logo";
-import { NavItem } from "@/components/layout/NavItem";
+import { NavMegaItem } from "@/components/layout/NavMegaItem";
+import { MobileNav } from "@/components/layout/MobileNav";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import {
+  homeMenu,
+  topicsMenu,
+  videosMenu,
+  searchMenu,
+  exploreMenu,
+  aboutMenu,
+} from "@/lib/nav-menu-data";
+import type { MegaMenuFeatured } from "@/components/layout/MegaMenuPanel";
 import { cn } from "@/lib/utils";
 import type { TopicMeta } from "@/types/content";
 
@@ -45,67 +55,87 @@ export function Header({ topics }: HeaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const routeLinks = [
-    { label: "Home", href: "/" },
-    { label: "Topics", href: "/topics" },
-    { label: "Videos", href: "/videos" },
-    { label: "About", href: "/about" },
-  ];
+  // Real content, not fabricated: the mega menu's featured cards pull
+  // from whatever articles actually exist (topics is already sorted
+  // newest-first — see lib/content.ts), so these stay accurate as
+  // articles are added/removed without any code change.
+  const featuredForHome: MegaMenuFeatured | undefined = useMemo(() => {
+    const topic = topics[0];
+    if (!topic) return undefined;
+    return {
+      title: topic.title,
+      description: topic.subtitle,
+      href: `/topics/${topic.slug}`,
+      imageUrl: topic.heroImageUrl,
+      category: topic.category,
+    };
+  }, [topics]);
+
+  const featuredForTopics: MegaMenuFeatured | undefined = useMemo(() => {
+    const topic = topics.find((item) => item.trending) ?? topics[0];
+    if (!topic) return undefined;
+    return {
+      title: topic.title,
+      description: topic.subtitle,
+      href: `/topics/${topic.slug}`,
+      imageUrl: topic.heroImageUrl,
+      category: topic.category,
+    };
+  }, [topics]);
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b border-border-subtle bg-bg-base/80 backdrop-blur-md transition-shadow duration-slow ease-out",
+        "sticky top-0 z-50 w-full max-w-[100vw] overflow-hidden border-b border-border-subtle bg-bg-base/80 pt-safe backdrop-blur-md transition-shadow duration-slow ease-out",
         scrolled && "shadow-md"
       )}
     >
       <Container>
-        <div className="flex h-16 items-center justify-between gap-4">
+        <div className="flex h-16 w-full min-w-0 items-center justify-between gap-2">
           <Logo />
 
-          {/* Desktop nav */}
+          {/* Desktop mega-menu nav — completely unchanged, hidden entirely below md so it can never affect mobile layout/width */}
           <nav className="hidden items-center gap-7 md:flex">
-            {routeLinks.map((link) => (
-              <NavItem
-                key={link.href}
-                href={link.href}
-                label={link.label}
-                active={pathname === link.href}
-              />
-            ))}
-            <NavItem
-              label={
-                <span className="flex items-center gap-1.5">
-                  Search
-                  <kbd className="rounded border border-border-subtle px-1 text-label text-text-tertiary">
-                    ⌘K
-                  </kbd>
-                </span>
-              }
-              onClick={() => setPaletteOpen(true)}
+            <NavMegaItem
+              label="Home"
+              href="/"
+              columns={homeMenu}
+              featured={featuredForHome}
             />
-            <NavItem label="Explore" href="/#explore-your-ai-journey" />
+            <NavMegaItem
+              label="Topics"
+              href="/topics"
+              columns={topicsMenu}
+              featured={featuredForTopics}
+            />
+            <NavMegaItem label="Videos" href="/videos" columns={videosMenu} />
+            <NavMegaItem
+              label="Search"
+              columns={searchMenu}
+              onClick={() => setPaletteOpen(true)}
+              onSearchAction={() => setPaletteOpen(true)}
+            />
+            <NavMegaItem
+              label="Explore"
+              href="/#explore-your-ai-journey"
+              columns={exploreMenu}
+              align="right"
+            />
+            <NavMegaItem label="About" href="/about" columns={aboutMenu} align="right" />
           </nav>
 
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <div className="hidden sm:block">
+              <ThemeToggle />
+            </div>
 
             <a
               href="/library"
               aria-label="Your library"
-              className="hidden h-10 w-10 items-center justify-center rounded-md text-text-secondary transition-colors duration-fast hover:text-text-primary sm:flex"
+              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors duration-fast hover:text-text-primary sm:flex"
             >
               <BookmarkNavIcon />
             </a>
-
-            <button
-              type="button"
-              onClick={() => setPaletteOpen(true)}
-              aria-label="Search"
-              className="flex h-10 w-10 items-center justify-center rounded-md text-text-secondary transition-colors duration-fast hover:text-text-primary md:hidden"
-            >
-              <SearchIcon />
-            </button>
 
             <div className="hidden md:block">
               <Button href="/topics" size="md">
@@ -113,13 +143,18 @@ export function Header({ topics }: HeaderProps) {
               </Button>
             </div>
 
-            {/* Mobile menu trigger */}
+            {/* Mobile menu trigger — the ONLY mobile-visible header
+                action besides the logo. Search now lives inside the
+                panel itself rather than as a competing icon here, so
+                this button is never squeezed for space. Always
+                rendered (never conditionally hidden by other icons),
+                fixed 48px touch target. */}
             <button
               type="button"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
-              onClick={() => setMobileOpen((open) => !open)}
-              className="flex h-10 w-10 items-center justify-center rounded-md text-text-primary md:hidden"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-text-primary md:hidden"
+              onClick={() => setMobileOpen((value) => !value)}
             >
               <MenuIcon open={mobileOpen} />
             </button>
@@ -127,62 +162,11 @@ export function Header({ topics }: HeaderProps) {
         </div>
       </Container>
 
-      {/* Mobile full-screen overlay nav */}
-      <div
-        className={cn(
-          "fixed inset-x-0 top-16 bottom-0 z-40 flex flex-col gap-2 bg-bg-base px-4 pt-8 transition-opacity duration-base ease-out md:hidden",
-          mobileOpen
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0"
-        )}
-      >
-        {routeLinks.map((link) => (
-          <a
-            key={link.href}
-            href={link.href}
-            onClick={() => setMobileOpen(false)}
-            className={cn(
-              "rounded-md px-4 py-4 text-heading-3-mobile transition-colors duration-fast hover:bg-bg-surface-1",
-              pathname === link.href ? "text-accent" : "text-text-primary"
-            )}
-          >
-            {link.label}
-          </a>
-        ))}
-        <button
-          type="button"
-          onClick={() => {
-            setMobileOpen(false);
-            setPaletteOpen(true);
-          }}
-          className="rounded-md px-4 py-4 text-left text-heading-3-mobile text-text-primary transition-colors duration-fast hover:bg-bg-surface-1"
-        >
-          Search
-        </button>
-        <a
-          href="/#explore-your-ai-journey"
-          onClick={() => setMobileOpen(false)}
-          className="rounded-md px-4 py-4 text-heading-3-mobile text-text-primary transition-colors duration-fast hover:bg-bg-surface-1"
-        >
-          Explore
-        </a>
-        <a
-          href="/library"
-          onClick={() => setMobileOpen(false)}
-          className="rounded-md px-4 py-4 text-heading-3-mobile text-text-primary transition-colors duration-fast hover:bg-bg-surface-1"
-        >
-          Your Library
-        </a>
-        <div className="flex items-center justify-between rounded-md px-4 py-4">
-          <span className="text-heading-3-mobile text-text-primary">Theme</span>
-          <ThemeToggle />
-        </div>
-        <div className="px-4 pt-4">
-          <Button href="/topics" size="lg" className="w-full">
-            Explore Topics
-          </Button>
-        </div>
-      </div>
+      <MobileNav
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        onSearch={() => setPaletteOpen(true)}
+      />
 
       <CommandPalette
         open={paletteOpen}
@@ -211,15 +195,6 @@ function MenuIcon({ open }: { open: boolean }) {
           strokeLinecap="round"
         />
       )}
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }
