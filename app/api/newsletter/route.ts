@@ -41,7 +41,10 @@ export async function POST(request: Request) {
       "Newsletter signup received but RESEND_API_KEY / RESEND_AUDIENCE_ID is not configured."
     );
     return NextResponse.json(
-      { error: "Newsletter signup isn't configured yet. Please try again later." },
+      {
+        error:
+          "Newsletter signup is being finalized — please check back shortly, or email us directly in the meantime.",
+      },
       { status: 503 }
     );
   }

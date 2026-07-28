@@ -3,7 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { WhatsAppButton } from "@/components/contact/WhatsAppButton";
+import { GmailButton } from "@/components/contact/GmailButton";
 import { Analytics } from "@/components/analytics/Analytics";
 import { getAllTopics, getAllVideos } from "@/lib/content";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/config";
@@ -68,7 +68,7 @@ export default async function RootLayout({
           {children}
         </main>
         <Footer />
-        <WhatsAppButton variant="floating" />
+        <GmailButton variant="floating" />
         <Analytics />
       </body>
     </html>

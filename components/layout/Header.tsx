@@ -13,7 +13,6 @@ import {
   homeMenu,
   topicsMenu,
   videosMenu,
-  searchMenu,
   exploreMenu,
   aboutMenu,
 } from "@/lib/nav-menu-data";
@@ -87,16 +86,22 @@ export function Header({ topics, videos = [] }: HeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full max-w-[100vw] overflow-hidden border-b border-border-subtle bg-bg-base/80 pt-safe backdrop-blur-md transition-shadow duration-slow ease-out",
+        "sticky top-0 z-50 w-full max-w-[100vw] border-b border-border-subtle bg-bg-base/80 pt-safe backdrop-blur-md transition-shadow duration-slow ease-out",
         scrolled && "shadow-md"
       )}
     >
       <Container>
-        <div className="flex h-16 w-full min-w-0 items-center justify-between gap-2">
+        <div className="flex h-16 w-full min-w-0 items-center justify-between gap-3">
           <Logo />
 
-          {/* Desktop mega-menu nav — completely unchanged, hidden entirely below md so it can never affect mobile layout/width */}
-          <nav className="hidden items-center gap-7 md:flex">
+          {/* Desktop mega-menu nav — only shown at lg+ where there's
+              guaranteed room for the full label set plus the trailing
+              actions without squeezing the logo. Showing this as early
+              as md (768px) left a "squeeze zone" on tablets/narrow
+              desktop windows where the logo and nav visually crowded
+              each other — bumping to lg removes that zone entirely
+              rather than trying to out-shrink it with flex hacks. */}
+          <nav className="hidden items-center gap-6 lg:flex">
             <NavMegaItem
               label="Home"
               href="/"
@@ -111,12 +116,6 @@ export function Header({ topics, videos = [] }: HeaderProps) {
             />
             <NavMegaItem label="Videos" href="/videos" columns={videosMenu} />
             <NavMegaItem
-              label="Search"
-              columns={searchMenu}
-              onClick={() => setPaletteOpen(true)}
-              onSearchAction={() => setPaletteOpen(true)}
-            />
-            <NavMegaItem
               label="Explore"
               href="/#explore-your-ai-journey"
               columns={exploreMenu}
@@ -125,10 +124,10 @@ export function Header({ topics, videos = [] }: HeaderProps) {
             <NavMegaItem label="About" href="/about" columns={aboutMenu} align="right" />
           </nav>
 
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <div className="hidden sm:block">
-              <ThemeToggle />
-            </div>
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
+            {/* Always visible — on every breakpoint, on every page —
+                rather than hidden until the mobile panel is opened. */}
+            <ThemeToggle />
 
             <a
               href="/library"
@@ -138,23 +137,21 @@ export function Header({ topics, videos = [] }: HeaderProps) {
               <BookmarkNavIcon />
             </a>
 
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <Button href="/topics" size="md">
                 Explore Topics
               </Button>
             </div>
 
-            {/* Mobile menu trigger — the ONLY mobile-visible header
-                action besides the logo. Search now lives inside the
-                panel itself rather than as a competing icon here, so
-                this button is never squeezed for space. Always
-                rendered (never conditionally hidden by other icons),
-                fixed 48px touch target. */}
+            {/* Mobile/tablet menu trigger — visible below the lg
+                breakpoint where the full desktop nav is hidden, so
+                there's always exactly one way to reach navigation,
+                never zero. Fixed 48px touch target. */}
             <button
               type="button"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-text-primary md:hidden"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-text-primary lg:hidden"
               onClick={() => setMobileOpen((value) => !value)}
             >
               <MenuIcon open={mobileOpen} />

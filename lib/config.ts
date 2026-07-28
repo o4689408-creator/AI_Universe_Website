@@ -3,9 +3,9 @@
  * and social details before/after launch.
  *
  * Every component that shows the site name, a social link, the
- * YouTube channel, WhatsApp, or the contact email reads it from here —
- * never hardcoded inline. Update a value once, it's correct everywhere
- * (header, footer, article share bar, WhatsApp button, JSON-LD, etc).
+ * YouTube channel, or the contact email reads it from here — never
+ * hardcoded inline. Update a value once, it's correct everywhere
+ * (header, footer, article share bar, Gmail button, JSON-LD, etc).
  *
  * SITE_URL reads from the environment so the same build works
  * correctly on Vercel preview deployments, a staging domain, and
@@ -49,29 +49,23 @@ export const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@ZynthicTech_AI";
 export const CONTACT_EMAIL = "storysphere173@gmail.com";
 
 /**
- * WhatsApp number in international format, digits only, no "+" and no
- * spaces (e.g. "919876543210" for an Indian number). Replace this
- * before launch — the WhatsApp button and "follow us" link are both
- * derived from it and won't open a real chat until a real number is
- * set here.
+ * The default subject/body used by the premium Gmail contact button
+ * (components/contact/GmailButton.tsx). Opens the visitor's default
+ * mail client via a `mailto:` link — no external service, no API key,
+ * works everywhere.
  */
-export const WHATSAPP_NUMBER = "10000000000";
+export const GMAIL_DEFAULT_SUBJECT = "AI Universe Inquiry";
 
-/**
- * The default greeting used by the premium WhatsApp contact button
- * (components/contact/WhatsAppButton.tsx). The current page URL is
- * appended automatically at click time, so the team always knows
- * which page the visitor reached out from.
- */
-export const WHATSAPP_DEFAULT_MESSAGE =
-  "Hello AI Universe Team! I discovered your website and would like to know more.";
+export const GMAIL_DEFAULT_BODY =
+  "Hello AI Universe Team,\n\nI discovered your website and would like to know more.\n\nThank you.";
 
-/** Plain wa.me link with no prefilled text — used for simple "follow us" links. */
-export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
-
-/** Builds a wa.me deep link with a prefilled, URL-encoded message. */
-export function buildWhatsAppLink(message: string): string {
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+/** Builds a `mailto:` link with a prefilled subject and body. */
+export function buildMailtoLink(
+  to: string = CONTACT_EMAIL,
+  subject: string = GMAIL_DEFAULT_SUBJECT,
+  body: string = GMAIL_DEFAULT_BODY
+): string {
+  return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -81,6 +75,5 @@ export function buildWhatsAppLink(message: string): string {
 // ---------------------------------------------------------------------------
 
 export const INSTAGRAM_URL = "https://instagram.com/aiuniverse";
-export const FACEBOOK_URL = "https://facebook.com/aiuniverse";
 export const LINKEDIN_URL = "https://linkedin.com/company/aiuniverse";
 export const X_URL = "https://x.com/aiuniverse";

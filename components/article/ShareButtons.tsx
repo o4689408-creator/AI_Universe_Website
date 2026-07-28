@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useRipple } from "@/lib/hooks/useRipple";
+import { buildMailtoLink } from "@/lib/config";
 
 interface ShareButtonsProps {
   url: string;
@@ -17,6 +18,11 @@ interface ShareButtonsProps {
  * to real ones but silently do nothing useful — worse than not having
  * them. YouTube/Instagram belong as "follow us" links (e.g. footer),
  * a different feature from "share this article."
+ *
+ * `flex-wrap` on the row (rather than a fixed single line) is
+ * deliberate: on narrow Android widths five 44px touch targets plus
+ * the "Share" label can exceed the available width, and wrapping to a
+ * second line reads far better than horizontal overflow/clipping.
  */
 export function ShareButtons({ url, title }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
@@ -24,6 +30,7 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
 
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
+  const gmailHref = buildMailtoLink(undefined, title, `${title}\n\n${url}`);
 
   async function handleCopy() {
     try {
@@ -36,11 +43,11 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
   }
 
   const baseButton =
-    "relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border-subtle text-text-secondary " +
+    "relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-border-subtle text-text-secondary " +
     "transition-all duration-base ease-out hover:-translate-y-0.5 hover:scale-105 hover:shadow-md active:scale-95";
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       <span className="text-body-sm text-text-tertiary">Share</span>
 
       <a
@@ -55,28 +62,6 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
       </a>
 
       <a
-        href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Share on Facebook"
-        onPointerDown={handleRipple}
-        className={cn(baseButton, "hover:border-transparent hover:bg-[#1877F2] hover:text-white")}
-      >
-        <FacebookIcon />
-      </a>
-
-      <a
-        href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Share on WhatsApp"
-        onPointerDown={handleRipple}
-        className={cn(baseButton, "hover:border-transparent hover:bg-[#25D366] hover:text-white")}
-      >
-        <WhatsAppIcon />
-      </a>
-
-      <a
         href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
         target="_blank"
         rel="noopener noreferrer"
@@ -85,6 +70,15 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
         className={cn(baseButton, "hover:border-transparent hover:bg-[#0A66C2] hover:text-white")}
       >
         <LinkedInIcon />
+      </a>
+
+      <a
+        href={gmailHref}
+        aria-label="Share via Gmail"
+        onPointerDown={handleRipple}
+        className={cn(baseButton, "hover:border-transparent hover:bg-white")}
+      >
+        <GmailIcon className="h-5 w-5" />
       </a>
 
       <button
@@ -113,26 +107,21 @@ function XIcon() {
   );
 }
 
-function FacebookIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M9.5 4.8h1.7V2.1h-1.9C7.6 2.1 6.5 3.3 6.5 5v1.6H5v2.6h1.5V14h2.6V9.2h1.7l.4-2.6H9.1V5.3c0-.3.2-.5.4-.5Z" />
-    </svg>
-  );
-}
-
-function WhatsAppIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M8 2a6 6 0 0 0-5.2 9L2 14l3.1-.8A6 6 0 1 0 8 2Zm0 1.2a4.8 4.8 0 0 1 4 7.4l-.2.3.5 1.8-1.9-.5-.3.2A4.8 4.8 0 1 1 8 3.2Zm-2.2 2c-.1 0-.3 0-.4.2-.2.2-.6.6-.6 1.4s.6 1.7.7 1.8c.1.1 1.2 1.9 3 2.6 1.4.6 1.7.5 2 .4.4 0 1.1-.4 1.3-.9.2-.4.2-.8.1-.9-.1-.1-.2-.2-.4-.3l-1.2-.6c-.2 0-.3-.1-.4.1l-.5.7c-.1.1-.2.1-.4 0-.2-.1-.8-.3-1.5-1-.6-.5-1-1.2-1.1-1.4-.1-.2 0-.3.1-.4l.3-.4c.1-.1.1-.2.2-.4v-.4l-.5-1.3c-.1-.4-.3-.3-.4-.3Z" />
-    </svg>
-  );
-}
-
 function LinkedInIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
       <path d="M3.6 5.6h2.3V13H3.6V5.6ZM4.75 2.5a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7ZM7.4 5.6h2.2v1h.03c.3-.58 1.06-1.2 2.18-1.2 2.33 0 2.76 1.53 2.76 3.52V13h-2.3V9.35c0-.87-.02-2-1.22-2s-1.4.95-1.4 1.93V13H7.4V5.6Z" />
+    </svg>
+  );
+}
+
+function GmailIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 48 36" className={className} aria-hidden="true">
+      <rect width="48" height="36" rx="6" fill="#FFFFFF" />
+      <path fill="#4285F4" d="M6 9v21a3 3 0 0 0 3 3h3V13.6L6 9Z" />
+      <path fill="#34A853" d="M36 33h3a3 3 0 0 0 3-3V9l-6 4.6V33Z" />
+      <path fill="#EA4335" d="M6 9l18 13.5L42 9a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3Z" />
     </svg>
   );
 }

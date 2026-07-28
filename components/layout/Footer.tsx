@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Logo } from "@/components/layout/Logo";
 import { FollowLinks } from "@/components/layout/FollowLinks";
-import { WhatsAppButton } from "@/components/contact/WhatsAppButton";
+import { GmailButton } from "@/components/contact/GmailButton";
 import { FooterNewsletterForm } from "@/components/contact/FooterNewsletterForm";
 import { SITE_DESCRIPTION, CONTACT_EMAIL } from "@/lib/config";
 
@@ -25,7 +25,7 @@ const legalLinks = [
 ];
 
 /**
- * Premium footer: brand + social + WhatsApp CTA, three quick-link
+ * Premium footer: brand + social + Gmail CTA, three quick-link
  * columns, and an inline newsletter form — all in one final band so
  * a visitor who scrolls to the bottom of any page always has a path
  * to subscribe, reach out, or keep exploring. AnimatedReveal is
@@ -59,7 +59,7 @@ export function Footer() {
               >
                 {CONTACT_EMAIL}
               </a>
-              <WhatsAppButton variant="compact" />
+              <GmailButton variant="compact" />
             </div>
           </div>
 

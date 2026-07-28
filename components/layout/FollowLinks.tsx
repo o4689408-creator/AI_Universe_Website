@@ -1,11 +1,10 @@
 import {
-  FACEBOOK_URL,
+  CONTACT_EMAIL,
   INSTAGRAM_URL,
   LINKEDIN_URL,
-  WHATSAPP_DEFAULT_MESSAGE,
   X_URL,
   YOUTUBE_CHANNEL_URL,
-  buildWhatsAppLink,
+  buildMailtoLink,
 } from "@/lib/config";
 
 const links = [
@@ -13,25 +12,26 @@ const links = [
   { label: "X", href: X_URL, icon: XIcon },
   { label: "Instagram", href: INSTAGRAM_URL, icon: InstagramIcon },
   { label: "LinkedIn", href: LINKEDIN_URL, icon: LinkedInIcon },
-  { label: "Facebook", href: FACEBOOK_URL, icon: FacebookIcon },
-  { label: "WhatsApp", href: buildWhatsAppLink(WHATSAPP_DEFAULT_MESSAGE), icon: WhatsAppIcon },
+  { label: "Email", href: buildMailtoLink(), icon: EmailIcon },
 ];
 
 export function FollowLinks() {
   return (
     <div className="flex items-center gap-3">
-      {links.map(({ label, href, icon: Icon }) => (
-        <a
-          key={label}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`Follow on ${label}`}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-border-subtle text-text-tertiary transition-colors duration-fast hover:border-border hover:text-text-primary"
-        >
-          <Icon />
-        </a>
-      ))}
+      {links.map(({ label, href, icon: Icon }) => {
+        const isMailto = href.startsWith("mailto:");
+        return (
+          <a
+            key={label}
+            href={href}
+            {...(isMailto ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+            aria-label={isMailto ? `Email ${CONTACT_EMAIL}` : `Follow on ${label}`}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-border-subtle text-text-tertiary transition-colors duration-fast hover:border-border hover:text-text-primary"
+          >
+            <Icon />
+          </a>
+        );
+      })}
     </div>
   );
 }
@@ -70,18 +70,17 @@ function LinkedInIcon() {
   );
 }
 
-function FacebookIcon() {
+function EmailIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M9.5 4.8h1.7V2.1h-1.9C7.6 2.1 6.5 3.3 6.5 5v1.6H5v2.6h1.5V14h2.6V9.2h1.7l.4-2.6H9.1V5.3c0-.3.2-.5.4-.5Z" />
-    </svg>
-  );
-}
-
-function WhatsAppIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M8 2a6 6 0 0 0-5.2 9L2 14l3.1-.8A6 6 0 1 0 8 2Zm0 1.2a4.8 4.8 0 0 1 4 7.4l-.2.3.5 1.8-1.9-.5-.3.2A4.8 4.8 0 1 1 8 3.2Z" />
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <rect x="1.5" y="3" width="13" height="10" rx="2" stroke="currentColor" strokeWidth="1.2" />
+      <path
+        d="M2 4 8 9 14 4"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

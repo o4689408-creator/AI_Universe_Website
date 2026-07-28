@@ -37,6 +37,11 @@ export function Section({
         "py-8 md:py-9 lg:py-10",
         backgroundStyles[background],
         divider && "border-t border-border-subtle",
+        // Any section that's a same-page jump target (id set) needs
+        // room to clear the sticky header — otherwise the browser
+        // scrolls it flush to the very top of the viewport and its
+        // heading ends up hidden behind the translucent header bar.
+        id && "scroll-mt-20",
         className
       )}
     >

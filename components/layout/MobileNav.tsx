@@ -79,7 +79,7 @@ export function MobileNav({ open, onClose, onSearch }: MobileNavProps) {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[100] flex max-w-[100vw] flex-col overflow-hidden bg-bg-base/90 backdrop-blur-2xl transition-opacity duration-base ease-out md:hidden",
+        "fixed inset-0 z-[100] flex max-w-[100vw] flex-col overflow-hidden bg-bg-base/90 backdrop-blur-2xl transition-opacity duration-base ease-out lg:hidden",
         open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
       )}
       role="dialog"

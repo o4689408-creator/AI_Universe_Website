@@ -20,12 +20,14 @@ All of these live in **`lib/config.ts`** unless noted otherwise. Open
 that file first; every value is documented inline.
 
 1. **Brand & contact** — `SITE_NAME`, `SITE_URL`, `CONTACT_EMAIL`,
-   `YOUTUBE_CHANNEL_URL`, `INSTAGRAM_URL`, `FACEBOOK_URL`,
-   `LINKEDIN_URL`, `X_URL` are all set already; update any that change.
-2. **WhatsApp** — `WHATSAPP_NUMBER` is currently a placeholder
-   (`10000000000`). Replace it with your real number in international
-   format (digits only, no `+`) before launch, or the floating
-   WhatsApp button and "follow us" link won't reach a real chat.
+   `YOUTUBE_CHANNEL_URL`, `INSTAGRAM_URL`, `LINKEDIN_URL`, `X_URL` are
+   all set already; update any that change.
+2. **Gmail contact button** — the floating button, footer link, and
+   Contact page CTA all open a `mailto:` link to `CONTACT_EMAIL` with
+   a prefilled subject/body (see `GMAIL_DEFAULT_SUBJECT` /
+   `GMAIL_DEFAULT_BODY` in `lib/config.ts`). This works with zero
+   setup — it opens whatever mail app is already the visitor's
+   default (Gmail, Outlook, Apple Mail, etc.).
 3. **Newsletter** — the subscribe forms (homepage, footer) call
    `app/api/newsletter/route.ts`, which needs `RESEND_API_KEY` and
    `RESEND_AUDIENCE_ID` set as environment variables (see
@@ -40,6 +42,19 @@ that file first; every value is documented inline.
    the box using a free, no-key provider. For a richer English dataset,
    optionally set `WORDS_API_KEY` — see `app/api/dictionary/route.ts`
    for details.
+6. **Notifying subscribers when you publish** — after adding a new
+   article or video, run one command to email everyone on the list:
+   ```bash
+   npm run notify -- --topic your-new-article-slug
+   npm run notify -- --video your-new-video-slug
+   ```
+   This uses the same `RESEND_API_KEY`/`RESEND_AUDIENCE_ID`/`RESEND_FROM`
+   as above, via Resend's Broadcasts API — see `scripts/notify-subscribers.mjs`.
+   It's a command you run, not an automatic trigger: this is a static
+   MDX site with no database or scheduler watching the content folder,
+   so there's no reliable moment to auto-detect "a new article just
+   went live" — one command right after publishing is the honest,
+   simple equivalent.
 
 None of the above block a successful build or deploy — they only
 gate the specific feature they power.
@@ -243,26 +258,26 @@ Resend, Mailchimp, etc.):
 The contact form (`components/contact/ContactForm.tsx`) works the
 same way and needs the same kind of connection.
 
-## 12. Connecting YouTube, Instagram, LinkedIn, Facebook, WhatsApp
+## 12. Connecting YouTube, Instagram, LinkedIn, X, and email
 
-All five are one file: **`lib/config.ts`**:
+All in one file: **`lib/config.ts`**:
 ```ts
-export const YOUTUBE_CHANNEL_URL = "https://youtube.com";
+export const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@ZynthicTech_AI";
 export const INSTAGRAM_URL = "https://instagram.com/aiuniverse";
-export const FACEBOOK_URL = "https://facebook.com/aiuniverse";
 export const LINKEDIN_URL = "https://linkedin.com/company/aiuniverse";
-export const WHATSAPP_URL = "https://wa.me/10000000000";
+export const X_URL = "https://x.com/aiuniverse";
+export const CONTACT_EMAIL = "storysphere173@gmail.com";
 ```
 Replace each placeholder with your real profile URL. These currently
 power:
 - The footer's "follow us" icon row (`components/layout/FollowLinks.tsx`)
 - The YouTube "Subscribe" buttons on the homepage and About page
-
-For WhatsApp specifically, the URL format is `https://wa.me/<phone
-number, no + or spaces>` — e.g. `https://wa.me/14155551234`.
+- The floating Gmail button, footer Gmail link, and Contact page CTA
+  (`components/contact/GmailButton.tsx`) — all open a `mailto:` link,
+  no setup required.
 
 Note: these are different from the **share buttons** on each article
-(X/Facebook/WhatsApp/LinkedIn/Copy in `components/article/ShareButtons.tsx`)
+(X/LinkedIn/Gmail/Copy in `components/article/ShareButtons.tsx`)
 — those share the article being read, not link to your profiles. No
 changes needed there; they're already fully functional.
 
