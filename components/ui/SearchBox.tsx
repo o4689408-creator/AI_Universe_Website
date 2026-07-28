@@ -3,19 +3,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { highlightMatch, searchTopics } from "@/lib/search";
-import type { TopicMeta } from "@/types/content";
+import { highlightMatch, searchAll, type CombinedSearchResult } from "@/lib/search";
+import type { TopicMeta, Video } from "@/types/content";
 
 interface SearchBoxProps {
   topics: TopicMeta[];
+  videos?: Video[];
   placeholder?: string;
   className?: string;
   autoFocus?: boolean;
   maxResults?: number;
 }
 
+function resultHref(result: CombinedSearchResult): string {
+  if (result.type === "topic") return `/topics/${result.topic.slug}`;
+  return result.video.companionTopicSlug
+    ? `/topics/${result.video.companionTopicSlug}`
+    : `/videos/${result.video.slug}`;
+}
+
+function resultKey(result: CombinedSearchResult): string {
+  return result.type === "topic" ? `topic-${result.topic.slug}` : `video-${result.video.id}`;
+}
+
 /**
- * Instant, client-side article search with a results dropdown.
+ * Instant, client-side article + video search with a results dropdown.
  *
  * "Instant" here means what it sounds like: filtering an in-memory
  * array of plain objects on every keystroke, no debounce needed. This
@@ -25,7 +37,8 @@ interface SearchBoxProps {
  */
 export function SearchBox({
   topics,
-  placeholder = "Search articles by title, topic, tag, or author…",
+  videos = [],
+  placeholder = "Search articles, topics, tags, authors, or videos…",
   className,
   autoFocus = false,
   maxResults = 8,
@@ -37,8 +50,8 @@ export function SearchBox({
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const results = useMemo(
-    () => searchTopics(topics, query).slice(0, maxResults),
-    [topics, query, maxResults]
+    () => searchAll(topics, videos, query).slice(0, maxResults),
+    [topics, videos, query, maxResults]
   );
 
   const showDropdown = isOpen && query.trim().length > 0;
@@ -58,8 +71,8 @@ export function SearchBox({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
-  function navigateTo(slug: string) {
-    router.push(`/topics/${slug}`);
+  function navigateTo(href: string) {
+    router.push(href);
     setIsOpen(false);
     setQuery("");
   }
@@ -95,7 +108,7 @@ export function SearchBox({
     } else if (event.key === "Enter") {
       event.preventDefault();
       const result = results[activeIndex];
-      if (result) navigateTo(result.topic.slug);
+      if (result) navigateTo(resultHref(result));
     }
   }
 
@@ -117,7 +130,7 @@ export function SearchBox({
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
           autoFocus={autoFocus}
-          aria-label="Search articles"
+          aria-label="Search"
           role="combobox"
           aria-expanded={showDropdown}
           aria-controls="search-box-results"
@@ -147,12 +160,12 @@ export function SearchBox({
           ) : (
             <ul className="max-h-96 overflow-y-auto p-2">
               {results.map((result, index) => (
-                <li key={result.topic.slug}>
+                <li key={resultKey(result)}>
                   <button
                     type="button"
                     role="option"
                     aria-selected={index === activeIndex}
-                    onClick={() => navigateTo(result.topic.slug)}
+                    onClick={() => navigateTo(resultHref(result))}
                     onMouseEnter={() => setActiveIndex(index)}
                     className={cn(
                       "flex w-full flex-col items-start gap-1 rounded-md px-3 py-2.5 text-left transition-colors duration-fast",
@@ -165,12 +178,21 @@ export function SearchBox({
                         index === activeIndex ? "text-accent" : "text-text-primary"
                       )}
                     >
-                      {highlightMatch(result.topic.title, query)}
+                      {highlightMatch(
+                        result.type === "topic" ? result.topic.title : result.video.title,
+                        query
+                      )}
                     </span>
                     <span className="line-clamp-1 text-body-sm text-text-tertiary">
-                      {highlightMatch(result.topic.category, query)}
-                      {" · "}
-                      {highlightMatch(result.topic.author.name, query)}
+                      {result.type === "topic" ? (
+                        <>
+                          {highlightMatch(result.topic.category, query)}
+                          {" · "}
+                          {highlightMatch(result.topic.author.name, query)}
+                        </>
+                      ) : (
+                        "Video"
+                      )}
                     </span>
                   </button>
                 </li>
@@ -190,10 +212,10 @@ function EmptyState({ query }: { query: string }) {
         <SearchIcon />
       </div>
       <p className="text-body-sm font-medium text-text-primary">
-        No articles found for &ldquo;{query}&rdquo;
+        No results found for &ldquo;{query}&rdquo;
       </p>
       <p className="text-body-sm text-text-tertiary">
-        Try a different title, topic, tag, or author.
+        Try a different title, topic, tag, author, or video.
       </p>
     </div>
   );

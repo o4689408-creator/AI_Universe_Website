@@ -35,6 +35,26 @@ function readTopicFile(slug: string): { raw: string; body: string } {
   return { raw, body };
 }
 
+/**
+ * Strips MDX/markdown/JSX syntax down to plain readable words, for
+ * search indexing only (lib/search.tsx). Deliberately crude — this
+ * never needs to be pixel-perfect prose, just clean enough that real
+ * words in the article body are matchable substrings. Truncated to
+ * keep TopicMeta (loaded for every listing page) lightweight.
+ */
+function extractSearchableText(body: string): string {
+  const plain = body
+    .replace(/```[\s\S]*?```/g, " ") // fenced code blocks
+    .replace(/<[^>]+>/g, " ") // JSX/HTML tags
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // markdown links -> label only
+    .replace(/[#>*_~`|-]/g, " ") // markdown punctuation
+    .replace(/\{[^}]*\}/g, " ") // JSX expressions/props
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return plain.slice(0, 4000);
+}
+
 function extractHeadings(body: string): TocHeading[] {
   const headingPattern = /^(#{2,3})\s+(.+)$/gm;
   const headings: TocHeading[] = [];
@@ -66,7 +86,7 @@ export function listTopicSlugs(): string[] {
  */
 export async function readTopicMeta(slug: string): Promise<TopicMeta | null> {
   try {
-    const { raw } = readTopicFile(slug);
+    const { raw, body } = readTopicFile(slug);
     const { frontmatter } = await compileMDX<TopicFrontmatter>({
       source: raw,
       options: { parseFrontmatter: true },
@@ -87,6 +107,7 @@ export async function readTopicMeta(slug: string): Promise<TopicMeta | null> {
       trending: frontmatter.trending ?? false,
       sources: frontmatter.sources ?? [],
       relatedSlugs: frontmatter.relatedSlugs ?? [],
+      contentText: extractSearchableText(body),
     };
   } catch {
     return null;
@@ -124,6 +145,7 @@ export async function readTopic(slug: string): Promise<Topic | null> {
       trending: frontmatter.trending ?? false,
       sources: frontmatter.sources ?? [],
       relatedSlugs: frontmatter.relatedSlugs ?? [],
+      contentText: extractSearchableText(body),
       content,
       headings: extractHeadings(body),
     };

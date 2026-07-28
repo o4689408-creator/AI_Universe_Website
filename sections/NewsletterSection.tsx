@@ -19,10 +19,9 @@ function isValidEmail(value: string) {
  * inline form on desktop, stacked on mobile. No modal, no confetti —
  * the success state fades in calmly in place.
  *
- * Note: this wires up client-side validation and local state only.
- * Connecting a real provider (e.g. ConvertKit/Resend) is a follow-up
- * step — the form action is isolated in handleSubmit specifically so
- * that wiring is a one-function change.
+ * Posts to app/api/newsletter/route.ts, which adds the address to a
+ * Resend Audience. See that route's doc comment for the required
+ * RESEND_API_KEY / RESEND_AUDIENCE_ID env vars.
  */
 export function NewsletterSection() {
   const [email, setEmail] = useState("");
@@ -40,9 +39,23 @@ export function NewsletterSection() {
     }
 
     setStatus("submitting");
-    // Placeholder for the real newsletter provider integration.
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setStatus("success");
+    try {
+      const response = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setError(data.error ?? "Something went wrong. Please try again.");
+        setStatus("error");
+        return;
+      }
+      setStatus("success");
+    } catch {
+      setError("Something went wrong. Please check your connection and try again.");
+      setStatus("error");
+    }
   }
 
   return (

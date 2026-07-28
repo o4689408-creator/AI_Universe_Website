@@ -19,13 +19,14 @@ import {
 } from "@/lib/nav-menu-data";
 import type { MegaMenuFeatured } from "@/components/layout/MegaMenuPanel";
 import { cn } from "@/lib/utils";
-import type { TopicMeta } from "@/types/content";
+import type { TopicMeta, Video } from "@/types/content";
 
 interface HeaderProps {
   topics: TopicMeta[];
+  videos?: Video[];
 }
 
-export function Header({ topics }: HeaderProps) {
+export function Header({ topics, videos = [] }: HeaderProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -172,6 +173,7 @@ export function Header({ topics }: HeaderProps) {
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         topics={topics}
+        videos={videos}
       />
     </header>
   );

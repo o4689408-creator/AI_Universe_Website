@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
 import { ContactForm } from "@/components/contact/ContactForm";
+import { WhatsAppButton } from "@/components/contact/WhatsAppButton";
 import { PageAmbientBackground } from "@/components/ui/PageAmbientBackground";
 import { CONTACT_EMAIL } from "@/lib/config";
 import { buildPageMetadata } from "@/lib/seo";
@@ -32,6 +33,16 @@ export default function ContactPage() {
           </p>
 
           <div className="mt-2">
+            <WhatsAppButton variant="cta" />
+          </div>
+
+          <div className="mt-4 flex items-center gap-4 text-body-sm text-text-tertiary">
+            <span className="h-px flex-1 bg-border-subtle" aria-hidden="true" />
+            or send a message
+            <span className="h-px flex-1 bg-border-subtle" aria-hidden="true" />
+          </div>
+
+          <div>
             <ContactForm />
           </div>
         </div>

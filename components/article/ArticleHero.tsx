@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Container } from "@/components/ui/Container";
+import { ImageLightbox } from "@/components/ui/ImageLightbox";
 import type { Author } from "@/types/content";
 
 interface ArticleHeroProps {
@@ -59,16 +60,18 @@ export function ArticleHero({
         </div>
 
         <div className="mx-auto mt-8 max-w-wide">
-          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-bg-surface-1">
-            <Image
-              src={heroImageUrl}
-              alt=""
-              fill
-              priority
-              sizes="(min-width: 1100px) 1100px, 100vw"
-              className="object-cover"
-            />
-          </div>
+          <ImageLightbox src={heroImageUrl} alt={title} className="rounded-xl">
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-bg-surface-1">
+              <Image
+                src={heroImageUrl}
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 1100px) 1100px, 100vw"
+                className="object-cover transition-transform duration-slow ease-out group-hover:scale-[1.02]"
+              />
+            </div>
+          </ImageLightbox>
         </div>
       </Container>
     </div>

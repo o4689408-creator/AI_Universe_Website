@@ -2,16 +2,19 @@ import {
   FACEBOOK_URL,
   INSTAGRAM_URL,
   LINKEDIN_URL,
-  WHATSAPP_URL,
+  WHATSAPP_DEFAULT_MESSAGE,
+  X_URL,
   YOUTUBE_CHANNEL_URL,
+  buildWhatsAppLink,
 } from "@/lib/config";
 
 const links = [
   { label: "YouTube", href: YOUTUBE_CHANNEL_URL, icon: YouTubeIcon },
+  { label: "X", href: X_URL, icon: XIcon },
   { label: "Instagram", href: INSTAGRAM_URL, icon: InstagramIcon },
   { label: "LinkedIn", href: LINKEDIN_URL, icon: LinkedInIcon },
   { label: "Facebook", href: FACEBOOK_URL, icon: FacebookIcon },
-  { label: "WhatsApp", href: WHATSAPP_URL, icon: WhatsAppIcon },
+  { label: "WhatsApp", href: buildWhatsAppLink(WHATSAPP_DEFAULT_MESSAGE), icon: WhatsAppIcon },
 ];
 
 export function FollowLinks() {
@@ -30,6 +33,14 @@ export function FollowLinks() {
         </a>
       ))}
     </div>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M9.5 6.8 14.2 1.5h-1.6L8.8 5.7 5.6 1.5H1.6l4.9 6.7-4.9 6.3h1.6l4-4.4 3.4 4.4h4l-5.1-7Zm-1.4 1.6-.5-.6-3.7-5h1.4l3 4 .5.6 3.9 5.3H11.3l-3.2-4.3Z" />
+    </svg>
   );
 }
 

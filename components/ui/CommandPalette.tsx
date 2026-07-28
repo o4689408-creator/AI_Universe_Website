@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { TopicMeta } from "@/types/content";
+import type { TopicMeta, Video } from "@/types/content";
 import { cn } from "@/lib/utils";
-import { highlightMatch, searchTopics } from "@/lib/search";
+import { highlightMatch, searchTopics, searchVideos } from "@/lib/search";
 
 interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
   topics: TopicMeta[];
+  videos?: Video[];
 }
 
 interface NavItem {
@@ -28,11 +29,11 @@ const navItems: NavItem[] = [
 interface PaletteOption {
   id: string;
   href: string;
-  group: "Navigate" | "Topics";
+  group: "Navigate" | "Topics" | "Videos";
   render: (isActive: boolean, query: string) => React.ReactNode;
 }
 
-export function CommandPalette({ open, onClose, topics }: CommandPaletteProps) {
+export function CommandPalette({ open, onClose, topics, videos = [] }: CommandPaletteProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -42,6 +43,7 @@ export function CommandPalette({ open, onClose, topics }: CommandPaletteProps) {
   // ranking logic SearchBox uses, so Cmd+K and the on-page search on
   // /topics never behave differently for the same query.
   const topicResults = useMemo(() => searchTopics(topics, query), [topics, query]);
+  const videoResults = useMemo(() => searchVideos(videos, query), [videos, query]);
 
   const matchingNavItems = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -77,10 +79,26 @@ export function CommandPalette({ open, onClose, topics }: CommandPaletteProps) {
       ),
     }));
 
+    const videoOptions: PaletteOption[] = videoResults.map(({ video }) => ({
+      id: `video-${video.id}`,
+      href: video.companionTopicSlug
+        ? `/topics/${video.companionTopicSlug}`
+        : `/videos/${video.slug}`,
+      group: "Videos" as const,
+      render: (isActive, q) => (
+        <>
+          <span className={cn("text-body-sm", isActive ? "text-accent" : "text-text-primary")}>
+            {highlightMatch(video.title, q)}
+          </span>
+          <span className="text-body-sm text-text-tertiary">Video</span>
+        </>
+      ),
+    }));
+
     // Without a query, show quick nav only (topics browsed via /topics).
     // With a query, show whichever groups actually matched.
-    return query.trim() ? [...navOptions, ...topicOptions] : navOptions;
-  }, [matchingNavItems, topicResults, query]);
+    return query.trim() ? [...navOptions, ...topicOptions, ...videoOptions] : navOptions;
+  }, [matchingNavItems, topicResults, videoResults, query]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -145,7 +163,7 @@ export function CommandPalette({ open, onClose, topics }: CommandPaletteProps) {
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search articles, or jump to a page…"
+            placeholder="Search articles, videos, or jump to a page…"
             aria-label="Search"
             role="combobox"
             aria-expanded="true"
@@ -166,15 +184,15 @@ export function CommandPalette({ open, onClose, topics }: CommandPaletteProps) {
           {options.length === 0 && (
             <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
               <p className="text-body-sm font-medium text-text-primary">
-                No articles found for &ldquo;{query}&rdquo;
+                No results found for &ldquo;{query}&rdquo;
               </p>
               <p className="text-body-sm text-text-tertiary">
-                Try a different title, topic, tag, or author.
+                Try a different title, topic, tag, author, or video.
               </p>
             </div>
           )}
 
-          {(["Navigate", "Topics"] as const).map((group) => {
+          {(["Navigate", "Topics", "Videos"] as const).map((group) => {
             const groupOptions = options.filter((option) => option.group === group);
             if (groupOptions.length === 0) return null;
 

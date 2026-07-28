@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useRipple } from "@/lib/hooks/useRipple";
 
 interface ShareButtonsProps {
   url: string;
@@ -19,6 +20,7 @@ interface ShareButtonsProps {
  */
 export function ShareButtons({ url, title }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
+  const handleRipple = useRipple();
 
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
@@ -34,8 +36,8 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
   }
 
   const baseButton =
-    "relative flex h-9 w-9 items-center justify-center rounded-full border border-border-subtle text-text-secondary " +
-    "transition-all duration-fast ease-out hover:-translate-y-0.5 hover:scale-105 active:scale-95";
+    "relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border-subtle text-text-secondary " +
+    "transition-all duration-base ease-out hover:-translate-y-0.5 hover:scale-105 hover:shadow-md active:scale-95";
 
   return (
     <div className="flex items-center gap-3">
@@ -46,7 +48,8 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on X"
-        className={cn(baseButton, "hover:border-text-primary/40 hover:text-text-primary")}
+        onPointerDown={handleRipple}
+        className={cn(baseButton, "hover:border-transparent hover:bg-text-primary hover:text-bg-base")}
       >
         <XIcon />
       </a>
@@ -56,7 +59,8 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on Facebook"
-        className={cn(baseButton, "hover:border-[#1877F2]/40 hover:text-[#1877F2]")}
+        onPointerDown={handleRipple}
+        className={cn(baseButton, "hover:border-transparent hover:bg-[#1877F2] hover:text-white")}
       >
         <FacebookIcon />
       </a>
@@ -66,7 +70,8 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on WhatsApp"
-        className={cn(baseButton, "hover:border-[#25D366]/40 hover:text-[#25D366]")}
+        onPointerDown={handleRipple}
+        className={cn(baseButton, "hover:border-transparent hover:bg-[#25D366] hover:text-white")}
       >
         <WhatsAppIcon />
       </a>
@@ -76,7 +81,8 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on LinkedIn"
-        className={cn(baseButton, "hover:border-[#0A66C2]/40 hover:text-[#0A66C2]")}
+        onPointerDown={handleRipple}
+        className={cn(baseButton, "hover:border-transparent hover:bg-[#0A66C2] hover:text-white")}
       >
         <LinkedInIcon />
       </a>
@@ -84,8 +90,9 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
       <button
         type="button"
         onClick={handleCopy}
+        onPointerDown={handleRipple}
         aria-label="Copy link"
-        className={cn(baseButton, "hover:border-accent/40 hover:text-accent")}
+        className={cn(baseButton, "hover:border-transparent hover:bg-accent hover:text-bg-base")}
       >
         {copied ? <CheckIcon /> : <LinkIcon />}
         {copied && (

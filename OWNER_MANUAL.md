@@ -14,6 +14,38 @@ deployment.
 
 ---
 
+## Before you launch — required setup
+
+All of these live in **`lib/config.ts`** unless noted otherwise. Open
+that file first; every value is documented inline.
+
+1. **Brand & contact** — `SITE_NAME`, `SITE_URL`, `CONTACT_EMAIL`,
+   `YOUTUBE_CHANNEL_URL`, `INSTAGRAM_URL`, `FACEBOOK_URL`,
+   `LINKEDIN_URL`, `X_URL` are all set already; update any that change.
+2. **WhatsApp** — `WHATSAPP_NUMBER` is currently a placeholder
+   (`10000000000`). Replace it with your real number in international
+   format (digits only, no `+`) before launch, or the floating
+   WhatsApp button and "follow us" link won't reach a real chat.
+3. **Newsletter** — the subscribe forms (homepage, footer) call
+   `app/api/newsletter/route.ts`, which needs `RESEND_API_KEY` and
+   `RESEND_AUDIENCE_ID` set as environment variables (see
+   `.env.example`). Get both from https://resend.com. Until they're
+   set, the form shows a clear "not configured yet" message instead of
+   silently losing subscribers.
+4. **Contact form** — `app/api/contact/route.ts` needs the same
+   `RESEND_API_KEY` plus `RESEND_FROM` (a sender address Resend will
+   accept — `onboarding@resend.dev` works for testing before you
+   verify your own domain).
+5. **Dictionary lookup** (select a word in an article) works out of
+   the box using a free, no-key provider. For a richer English dataset,
+   optionally set `WORDS_API_KEY` — see `app/api/dictionary/route.ts`
+   for details.
+
+None of the above block a successful build or deploy — they only
+gate the specific feature they power.
+
+---
+
 ## Folder structure (what matters to you as the owner)
 
 ```

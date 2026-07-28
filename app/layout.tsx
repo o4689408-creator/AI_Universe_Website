@@ -3,8 +3,9 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { WhatsAppButton } from "@/components/contact/WhatsAppButton";
 import { Analytics } from "@/components/analytics/Analytics";
-import { getAllTopics } from "@/lib/content";
+import { getAllTopics, getAllVideos } from "@/lib/content";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/config";
 import { noFlashThemeScript } from "@/lib/theme";
 import "./globals.css";
@@ -37,11 +38,6 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  alternates: {
-    types: {
-      "application/rss+xml": `${SITE_URL}/rss.xml`,
-    },
-  },
 };
 
 export default async function RootLayout({
@@ -52,7 +48,7 @@ export default async function RootLayout({
   // Fetched once here (metadata-only, cheap — see lib/content.ts) so the
   // Header's search/command palette has a live index without every page
   // needing to know about it.
-  const topics = await getAllTopics();
+  const [topics, videos] = await Promise.all([getAllTopics(), getAllVideos()]);
 
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
@@ -67,11 +63,12 @@ export default async function RootLayout({
         >
           Skip to content
         </a>
-        <Header topics={topics} />
+        <Header topics={topics} videos={videos} />
         <main id="main-content" className="flex-1">
           {children}
         </main>
         <Footer />
+        <WhatsAppButton variant="floating" />
         <Analytics />
       </body>
     </html>

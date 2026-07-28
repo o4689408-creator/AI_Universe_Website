@@ -7,7 +7,7 @@ import { PageAmbientBackground } from "@/components/ui/PageAmbientBackground";
 import { TrendingSection } from "@/components/discovery/TrendingSection";
 import { TodaysDiscoverySection } from "@/components/discovery/TodaysDiscoverySection";
 import { LearningPathSection } from "@/components/discovery/LearningPathSection";
-import { getAllTopics } from "@/lib/content";
+import { getAllTopics, getAllVideos } from "@/lib/content";
 import { buildPageMetadata } from "@/lib/seo";
 import { learningPaths, resolveLearningPath } from "@/lib/learning-paths";
 
@@ -25,7 +25,7 @@ export const metadata: Metadata = buildPageMetadata({
 export const revalidate = 3600;
 
 export default async function TopicsPage() {
-  const topics = await getAllTopics();
+  const [topics, videos] = await Promise.all([getAllTopics(), getAllVideos()]);
   const featuredPath = resolveLearningPath(learningPaths[0]!, topics);
 
   return (
@@ -40,7 +40,7 @@ export default async function TopicsPage() {
         </div>
 
         <div className="mb-10 max-w-md">
-          <SearchBox topics={topics} />
+          <SearchBox topics={topics} videos={videos} />
         </div>
 
         <div className="flex flex-col gap-12">

@@ -7,6 +7,7 @@ import { ReadingProgress } from "@/components/article/ReadingProgress";
 import { TableOfContents } from "@/components/article/TableOfContents";
 import { AuthorBio } from "@/components/article/AuthorBio";
 import { ShareButtons } from "@/components/article/ShareButtons";
+import { DictionaryPopover } from "@/components/article/DictionaryPopover";
 import { SourcesList } from "@/components/article/SourcesList";
 import { RelatedTopics } from "@/components/article/RelatedTopics";
 import { ArticleNav } from "@/components/article/ArticleNav";
@@ -82,7 +83,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             <TableOfContents headings={topic.headings} />
 
             <article className="mx-auto w-full max-w-reading">
-              <div className="prose-reading [&>div:first-child>p]:mt-0">{topic.content}</div>
+              <DictionaryPopover>
+                <div className="prose-reading [&>div:first-child>p]:mt-0">{topic.content}</div>
+              </DictionaryPopover>
 
               <div className="mt-6 flex items-center justify-between border-t border-border-subtle pt-6">
                 <ShareButtons url={url} title={topic.title} />

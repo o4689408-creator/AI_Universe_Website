@@ -62,6 +62,12 @@ export interface TopicMeta {
   trending?: boolean;
   sources: SourceLink[];
   relatedSlugs: string[];
+  /**
+   * Plain-text extraction of the article body (MDX/markdown syntax
+   * stripped), used only by lib/search.tsx to match search queries
+   * against the actual content of the piece — never rendered directly.
+   */
+  contentText: string;
 }
 
 /**

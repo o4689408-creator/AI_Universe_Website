@@ -10,10 +10,9 @@ function isValidEmail(value: string) {
 }
 
 /**
- * Client-side validation and local state only, matching the Newsletter
- * section's pattern (sections/NewsletterSection.tsx). Wiring a real
- * destination (e.g. a Resend-backed API route) is a follow-up — this
- * isolates that change to handleSubmit.
+ * Posts to app/api/contact/route.ts, which relays the message to
+ * CONTACT_EMAIL (lib/config.ts) via Resend. See that route's doc
+ * comment for the required RESEND_API_KEY / RESEND_FROM env vars.
  */
 export function ContactForm() {
   const [name, setName] = useState("");
@@ -38,9 +37,23 @@ export function ContactForm() {
     }
 
     setStatus("submitting");
-    // Placeholder for the real contact-form backend integration.
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setStatus("success");
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message }),
+      });
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setError(data.error ?? "Something went wrong. Please try again.");
+        setStatus("error");
+        return;
+      }
+      setStatus("success");
+    } catch {
+      setError("Something went wrong. Please check your connection and try again.");
+      setStatus("error");
+    }
   }
 
   if (status === "success") {
