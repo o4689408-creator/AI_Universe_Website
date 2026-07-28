@@ -1,0 +1,29 @@
+[1mdiff --cc lib/config.ts[m
+[1mindex 380583d,1b0855a..0000000[m
+[1m--- a/lib/config.ts[m
+[1m+++ b/lib/config.ts[m
+[36m@@@ -15,7 -15,7 +15,11 @@@[m [mexport const SITE_NAME = "AI Universe"[m
+  export const SITE_DESCRIPTION =[m
+    "A premium knowledge platform for understanding artificial intelligence — deep research, clear explanations, and documentary-style storytelling.";[m
+  [m
+[32m++<<<<<<< HEAD[m
+[32m +export const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@ZynthicTech_AI";[m
+[32m++=======[m
+[32m+ export const YOUTUBE_CHANNEL_URL = "https://youtube.com";[m
+[32m++>>>>>>> fc7e995d24da00b12bb20f05133420919820dc7a[m
+  [m
+  /**[m
+   * "Follow us" destinations — your own social profiles, distinct from[m
+[36m@@@ -26,6 -26,6 +30,12 @@@[m
+  export const INSTAGRAM_URL = "https://instagram.com/aiuniverse";[m
+  export const FACEBOOK_URL = "https://facebook.com/aiuniverse";[m
+  export const LINKEDIN_URL = "https://linkedin.com/company/aiuniverse";[m
+[32m++<<<<<<< HEAD[m
+[32m +export const WHATSAPP_URL = "https://wa.me/+919643038097";[m
+[32m +[m
+[32m +export const CONTACT_EMAIL = "storyspere173@gmail.com";[m
+[32m++=======[m
+[32m+ export const WHATSAPP_URL = "https://wa.me/10000000000";[m
+[32m+ [m
+[32m+ export const CONTACT_EMAIL = "hello@aiuniverse.com";[m
+[32m++>>>>>>> fc7e995d24da00b12bb20f05133420919820dc7a[m
