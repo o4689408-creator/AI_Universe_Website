@@ -287,7 +287,7 @@ same way and needs the same kind of connection.
 All in one file: **`lib/config.ts`**:
 ```ts
 export const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@ZynthicTech_AI";
-export const INSTAGRAM_URL = "https://instagram.com/aiuniverse";
+export const INSTAGRAM_URL = "https://www.instagram.com/zynthictech_07?igsh=YnpjYzRhem52cmt2";
 export const LINKEDIN_URL = "https://linkedin.com/company/aiuniverse";
 export const X_URL = "https://x.com/aiuniverse";
 export const CONTACT_EMAIL = "storysphere173@gmail.com";

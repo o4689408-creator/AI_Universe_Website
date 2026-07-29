@@ -15,7 +15,7 @@
   /**[m
    * "Follow us" destinations — your own social profiles, distinct from[m
 [36m@@@ -26,6 -26,6 +30,12 @@@[m
-  export const INSTAGRAM_URL = "https://instagram.com/aiuniverse";[m
+  export const M_URL = "https://m.com/aiuniverse";[m
   export const FACEBOOK_URL = "https://facebook.com/aiuniverse";[m
   export const LINKEDIN_URL = "https://linkedin.com/company/aiuniverse";[m
 [32m++<<<<<<< HEAD[m

@@ -103,7 +103,7 @@ export function NewsletterSection() {
                 </h2>
                 <p className="text-balance text-body text-text-secondary">
                   One email when a new topic goes live. No noise, no spam —
-                  unsubscribe anytime.
+                  instagribe anytime.
                 </p>
               </div>
 
