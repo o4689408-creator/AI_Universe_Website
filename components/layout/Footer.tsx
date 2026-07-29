@@ -4,7 +4,7 @@ import { Logo } from "@/components/layout/Logo";
 import { FollowLinks } from "@/components/layout/FollowLinks";
 import { GmailButton } from "@/components/contact/GmailButton";
 import { FooterNewsletterForm } from "@/components/contact/FooterNewsletterForm";
-import { SITE_DESCRIPTION, CONTACT_EMAIL } from "@/lib/config";
+import { SITE_DESCRIPTION } from "@/lib/config";
 
 const exploreLinks = [
   { label: "Home", href: "/" },
@@ -52,13 +52,7 @@ export function Footer() {
             <div className="mt-1 flex items-center gap-3">
               <FollowLinks />
             </div>
-            <div className="mt-2 flex flex-col gap-2">
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                className="w-fit text-body-sm text-text-secondary transition-colors duration-fast hover:text-text-primary"
-              >
-                {CONTACT_EMAIL}
-              </a>
+            <div className="mt-2">
               <GmailButton variant="compact" />
             </div>
           </div>

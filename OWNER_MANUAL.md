@@ -42,19 +42,43 @@ that file first; every value is documented inline.
    the box using a free, no-key provider. For a richer English dataset,
    optionally set `WORDS_API_KEY` — see `app/api/dictionary/route.ts`
    for details.
-6. **Notifying subscribers when you publish** — after adding a new
-   article or video, run one command to email everyone on the list:
+6. **Notifying subscribers when you publish — fully automatic.**
+   `.github/workflows/notify-subscribers.yml` runs on every `git push`
+   to `main` that touches `content/topics/**` or `lib/videos.ts`. It
+   diffs the push to find newly *added* article files and any new
+   video slugs in `lib/videos.ts`, then emails your Resend Audience
+   via Broadcasts for each one — see `scripts/notify-from-git-diff.mjs`
+   for exactly how it decides what's new. You publish by pushing to
+   `main` (which is also how Vercel deploys the site), and the email
+   goes out on its own — nothing to run by hand.
+
+   **One-time setup** (GitHub repo -> Settings -> Secrets and variables
+   -> Actions -> "New repository secret"), add:
+   - `RESEND_API_KEY`
+   - `RESEND_AUDIENCE_ID`
+   - `RESEND_FROM`
+   - `NEXT_PUBLIC_SITE_URL` (your production domain, so email links
+     point to the live site)
+
+   These are the exact same values you already set in Vercel for the
+   newsletter/contact forms — you're just copying them into GitHub's
+   secrets as well, since GitHub Actions runs in its own environment
+   and can't read Vercel's.
+
+   **Manual override** (resending, or publishing through a path that
+   doesn't push to `main`):
    ```bash
    npm run notify -- --topic your-new-article-slug
    npm run notify -- --video your-new-video-slug
    ```
-   This uses the same `RESEND_API_KEY`/`RESEND_AUDIENCE_ID`/`RESEND_FROM`
-   as above, via Resend's Broadcasts API — see `scripts/notify-subscribers.mjs`.
-   It's a command you run, not an automatic trigger: this is a static
-   MDX site with no database or scheduler watching the content folder,
-   so there's no reliable moment to auto-detect "a new article just
-   went live" — one command right after publishing is the honest,
-   simple equivalent.
+
+   **Known edge case, stated plainly:** on a brand-new repository's
+   very first push (or after a force-push), GitHub can't give the
+   workflow a valid "before" commit to diff against. The workflow
+   detects this and skips automatically (logs why) rather than
+   guessing and potentially emailing your list about every existing
+   article at once — use the manual command above for that first
+   batch instead.
 
 None of the above block a successful build or deploy — they only
 gate the specific feature they power.

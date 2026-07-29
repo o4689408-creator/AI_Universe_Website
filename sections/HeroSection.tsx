@@ -2,6 +2,8 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { HeroAmbientBackground } from "@/components/ui/HeroAmbientBackground";
 import { HeroSceneCanvas } from "@/components/ui/HeroSceneCanvas";
+import { ScrollParallaxLayer } from "@/components/ui/ScrollParallaxLayer";
+import { CursorSpotlight } from "@/components/ui/CursorSpotlight";
 import { StaggeredHeading } from "@/components/ui/StaggeredHeading";
 import { YOUTUBE_CHANNEL_URL } from "@/lib/config";
 
@@ -23,10 +25,19 @@ import { YOUTUBE_CHANNEL_URL } from "@/lib/config";
 export function HeroSection() {
   return (
     <section className="relative flex min-h-[90vh] items-center overflow-hidden">
-      {/* Ambient background — decorative, mouse-parallax, aria-hidden */}
-      <HeroAmbientBackground />
-      {/* Interactive 3D-style particle scene — layered on top, decorative, aria-hidden */}
-      <HeroSceneCanvas />
+      {/* Ambient background — decorative, mouse-parallax, aria-hidden.
+          Wrapped in a scroll-linked parallax layer so the whole
+          atmosphere drifts and fades as the reader scrolls past the
+          hero, composing with (not replacing) its own internal
+          mouse-parallax transform. */}
+      <ScrollParallaxLayer speed={0.25} fadeDistance={700} className="absolute inset-0">
+        <HeroAmbientBackground />
+        {/* Interactive 3D-style particle scene — layered on top, decorative, aria-hidden */}
+        <HeroSceneCanvas />
+      </ScrollParallaxLayer>
+
+      {/* A faint spotlight the cursor carries with it — desktop only. */}
+      <CursorSpotlight />
       {/*
         Text-safety layer: a cheap, static CSS gradient (no JS, no
         animation) that gently darkens the area directly behind the

@@ -59,7 +59,7 @@ export function MegaMenuPanel({
         <Link
           href={featured.href}
           onClick={onLinkClick}
-          className="group flex flex-col gap-2 rounded-lg border border-border-subtle bg-bg-surface-2 p-3 transition-colors duration-fast hover:border-border"
+          className="group flex flex-col gap-2 rounded-xl border border-border-subtle bg-bg-surface-2 p-3 transition-all duration-base ease-out hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-glow-accent"
         >
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-md">
             <Image
@@ -91,10 +91,10 @@ function MegaMenuLinkItem({
 }) {
   const content = (
     <>
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-bg-surface-2 text-text-secondary transition-colors duration-fast group-hover/link:bg-accent-muted group-hover/link:text-accent">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-bg-surface-2 text-text-secondary transition-all duration-base ease-out group-hover/link:scale-110 group-hover/link:rotate-3 group-hover/link:bg-accent-muted group-hover/link:text-accent group-hover/link:shadow-glow-accent">
         {link.icon}
       </span>
-      <span className="flex flex-col">
+      <span className="flex flex-col gap-0.5">
         <span className="text-body-sm font-medium text-text-primary transition-colors duration-fast group-hover/link:text-accent">
           {link.title}
         </span>
@@ -104,7 +104,7 @@ function MegaMenuLinkItem({
   );
 
   const classes =
-    "group/link flex items-start gap-3 rounded-md p-2 text-left transition-all duration-fast ease-out hover:-translate-y-0.5 hover:bg-bg-surface-1";
+    "group/link flex items-start gap-3.5 rounded-lg p-2.5 text-left transition-all duration-base ease-out hover:-translate-y-0.5 hover:bg-bg-surface-2/70";
 
   if (!link.href) {
     return (

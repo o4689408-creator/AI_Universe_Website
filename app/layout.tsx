@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { GmailButton } from "@/components/contact/GmailButton";
+import { RouteProgressBar } from "@/components/ui/RouteProgressBar";
 import { Analytics } from "@/components/analytics/Analytics";
 import { getAllTopics, getAllVideos } from "@/lib/content";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/config";
@@ -57,6 +59,9 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: noFlashThemeScript }} />
       </head>
       <body className="flex min-h-screen flex-col font-sans">
+        <Suspense fallback={null}>
+          <RouteProgressBar />
+        </Suspense>
         <a
           href="#main-content"
           className="sr-only rounded-md bg-accent px-4 py-2 text-bg-base focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200]"

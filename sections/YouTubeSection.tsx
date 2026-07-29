@@ -30,7 +30,7 @@ export function YouTubeSection({ videos }: YouTubeSectionProps) {
       />
       <Container>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_1.6fr] md:items-center md:gap-10 lg:grid-cols-[minmax(0,1fr)_2fr] lg:gap-12">
-          <AnimatedReveal className="flex flex-col items-start gap-4">
+          <AnimatedReveal variant="slide-left" className="flex flex-col items-start gap-4">
             <span className="text-label uppercase text-accent">
               On YouTube
             </span>
@@ -51,9 +51,9 @@ export function YouTubeSection({ videos }: YouTubeSectionProps) {
             </Button>
           </AnimatedReveal>
 
-          <div className="flex gap-4 overflow-x-auto pb-2">
+          <AnimatedReveal variant="slide-right" className="flex gap-4 overflow-x-auto pb-2">
             {videos.map((video, index) => (
-              <AnimatedReveal key={video.id} variant="scale-in" delayMs={index * 90}>
+              <AnimatedReveal key={video.id} variant="scale-in" delayMs={index * 90} className="shrink-0">
                 <VideoThumbnail
                   href={
                     video.companionTopicSlug
@@ -65,7 +65,7 @@ export function YouTubeSection({ videos }: YouTubeSectionProps) {
                 />
               </AnimatedReveal>
             ))}
-          </div>
+          </AnimatedReveal>
         </div>
       </Container>
     </Section>

@@ -4,10 +4,11 @@ import { useState, type FormEvent } from "react";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
 import { AnimatedReveal } from "@/components/ui/AnimatedReveal";
+import { GmailButton } from "@/components/contact/GmailButton";
 import { cn } from "@/lib/utils";
 import { useRipple } from "@/lib/hooks/useRipple";
 
-type Status = "idle" | "submitting" | "success" | "error";
+type Status = "idle" | "submitting" | "success" | "error" | "not-configured";
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -21,14 +22,14 @@ function isValidEmail(value: string) {
  * Layout: a self-contained card (not just a flat colored band) with a
  * gradient border-glow, an icon badge, and a form that's genuinely
  * legible and easy to tap at every width — full-bleed stacked on
- * phones, inline on tablet/desktop. This intentionally reads as its
- * own premium "moment" on the page rather than a plain strip of text,
- * since a subscribe prompt that looks like an afterthought converts
- * like one.
+ * phones, inline on tablet/desktop.
  *
  * Posts to app/api/newsletter/route.ts, which adds the address to a
- * Resend Audience. See that route's doc comment for the required
- * RESEND_API_KEY / RESEND_AUDIENCE_ID env vars.
+ * Resend Audience and sends a confirmation email. If Resend isn't
+ * configured yet (no RESEND_API_KEY / RESEND_AUDIENCE_ID set), the
+ * route can't invent a place to save the address — rather than
+ * showing an error, this falls back to a direct "email us" prompt, so
+ * a visitor is never met with a dead end either way.
  */
 export function NewsletterSection() {
   const [email, setEmail] = useState("");
@@ -53,7 +54,15 @@ export function NewsletterSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        configured?: boolean;
+      };
+
+      if (data.configured === false) {
+        setStatus("not-configured");
+        return;
+      }
       if (!response.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
         setStatus("error");
@@ -98,15 +107,30 @@ export function NewsletterSection() {
                 </p>
               </div>
 
-              {status === "success" ? (
+              {status === "success" && (
                 <div
                   role="status"
-                  className="flex items-center gap-2.5 rounded-full border border-accent/30 bg-accent-muted px-5 py-3 text-body font-medium text-accent"
+                  className="flex items-center gap-2.5 rounded-full border border-accent/30 bg-accent-muted px-5 py-3 text-body font-medium text-accent animate-fade-up"
                 >
-                  <CheckIcon />
-                  You&apos;re on the list — thanks for subscribing.
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-bg-base">
+                    <CheckIcon />
+                  </span>
+                  You&apos;re on the list — check your inbox for confirmation.
                 </div>
-              ) : (
+              )}
+
+              {status === "not-configured" && (
+                <div className="flex flex-col items-center gap-3 rounded-xl border border-border-subtle bg-bg-surface-2 px-5 py-4 animate-fade-up">
+                  <p className="text-body-sm text-text-secondary">
+                    Signup is being finalized — email us directly and we&apos;ll add you personally.
+                  </p>
+                  <GmailButton variant="compact" />
+                </div>
+              )}
+
+              {(status === "idle" ||
+                status === "submitting" ||
+                status === "error") && (
                 <form
                   onSubmit={handleSubmit}
                   noValidate
@@ -170,12 +194,11 @@ function MailIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-      <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.3" />
+    <svg width="12" height="12" viewBox="0 0 18 18" fill="none" aria-hidden="true">
       <path
-        d="M5.5 9.2 7.8 11.5 12.5 6.5"
+        d="M4 9.2 7.2 12.5 14 5.5"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

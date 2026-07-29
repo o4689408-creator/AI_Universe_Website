@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
+import { useScaleIntoView } from "@/lib/hooks/useScaleIntoView";
 
 interface VideoEmbedProps {
   youtubeId: string;
@@ -17,9 +18,9 @@ interface VideoEmbedProps {
  * embedded video (per the blueprint's performance requirements).
  *
  * Also scales in gradually as it enters the viewport (rather than a
- * single reveal step) — a continuous, scroll-position-driven scale
- * from 96% to 100%, reflecting how far the player has crossed into
- * view. Skips entirely under prefers-reduced-motion.
+ * single reveal step) via useScaleIntoView — a continuous,
+ * scroll-position-driven scale reflecting how far the player has
+ * crossed into view.
  */
 export function VideoEmbed({
   youtubeId,
@@ -28,40 +29,14 @@ export function VideoEmbed({
   caption,
 }: VideoEmbedProps) {
   const [playing, setPlaying] = useState(false);
-  const [scale, setScale] = useState(0.96);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const node = wrapperRef.current;
-    if (!node) return;
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setScale(1);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (!entry) return;
-        // Map intersection ratio (0 -> 1) onto a subtle scale range
-        // (0.96 -> 1) so the player visibly "settles" into place as
-        // more of it crosses into the viewport.
-        setScale(0.96 + entry.intersectionRatio * 0.04);
-      },
-      { threshold: Array.from({ length: 21 }, (_, i) => i / 20) }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
+  const { ref, scale } = useScaleIntoView<HTMLDivElement>(0.96);
 
   return (
     <figure className="my-8">
       <div
-        ref={wrapperRef}
+        ref={ref}
         style={{ transform: `scale(${scale})` }}
-        className="relative aspect-video w-full overflow-hidden rounded-lg bg-bg-surface-1 transition-transform duration-300 ease-out will-change-transform"
+        className="relative aspect-video w-full overflow-hidden rounded-lg bg-bg-surface-1 shadow-[var(--shadow-md)] transition-transform duration-300 ease-out will-change-transform"
       >
         {playing ? (
           <iframe
@@ -83,10 +58,10 @@ export function VideoEmbed({
               alt=""
               fill
               sizes="(min-width: 768px) 680px, 100vw"
-              className="object-cover"
+              className="object-cover transition-transform duration-slow ease-out group-hover:scale-[1.03]"
             />
-            <span className="absolute inset-0 bg-black/20 transition-opacity duration-base ease-out group-hover:bg-black/10" />
-            <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-black/70 transition-transform duration-base ease-out group-hover:scale-105">
+            <span className="absolute inset-0 bg-black/25 transition-opacity duration-base ease-out group-hover:bg-black/15" />
+            <span className="relative flex h-[68px] w-[68px] items-center justify-center rounded-full border border-white/20 bg-white/10 shadow-glow-accent backdrop-blur-md transition-transform duration-base ease-out group-hover:scale-110">
               <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
                 <path d="M4 2.5L13 8L4 13.5V2.5Z" fill="white" />
               </svg>

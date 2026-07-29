@@ -50,10 +50,7 @@ export async function POST(request: Request) {
 
   if (!apiKey || !fromAddress) {
     console.error("Contact form received but RESEND_API_KEY / RESEND_FROM is not configured.");
-    return NextResponse.json(
-      { error: "Contact form isn't configured yet. Please email us directly instead." },
-      { status: 503 }
-    );
+    return NextResponse.json({ configured: false }, { status: 200 });
   }
 
   try {

@@ -84,16 +84,20 @@ export function NavMegaItem({
 
       <div
         className={cn(
-          "absolute top-full z-40 mt-3 w-[420px] origin-top overflow-hidden rounded-xl border border-border-subtle bg-bg-surface-1/90 shadow-lg backdrop-blur-xl transition-all duration-base ease-out",
+          "absolute top-full z-40 mt-3 w-[420px] origin-top overflow-hidden rounded-2xl border border-border-subtle bg-bg-surface-1/85 shadow-[var(--shadow-lg),var(--shadow-glow-accent)] backdrop-blur-2xl ring-1 ring-white/[0.04] transition-all duration-slow ease-out",
           align === "right" ? "right-0" : "left-0",
           open
             ? "translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none -translate-y-1 scale-[0.97] opacity-0"
+            : "pointer-events-none -translate-y-2 scale-[0.96] opacity-0"
         )}
       >
         {/* Soft animated accent glow along the top edge — the "animated border" premium detail. */}
         <div
-          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent"
+          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-accent/70 to-transparent"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute -top-20 left-1/2 h-40 w-64 -translate-x-1/2 rounded-full bg-accent/[0.10] blur-3xl"
           aria-hidden="true"
         />
         <MegaMenuPanel

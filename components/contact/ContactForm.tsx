@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
+import { buildMailtoLink } from "@/lib/config";
 
-type Status = "idle" | "submitting" | "success" | "error";
+type Status = "idle" | "submitting" | "success" | "error" | "not-configured";
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -13,6 +14,12 @@ function isValidEmail(value: string) {
  * Posts to app/api/contact/route.ts, which relays the message to
  * CONTACT_EMAIL (lib/config.ts) via Resend. See that route's doc
  * comment for the required RESEND_API_KEY / RESEND_FROM env vars.
+ *
+ * If Resend isn't configured yet, the route returns `configured:
+ * false` rather than an error — this form then falls back to opening
+ * the visitor's own mail client with the message prefilled (via
+ * GmailButton's same `mailto:` mechanism), so filling out the form is
+ * never a dead end even before the owner has set up email sending.
  */
 export function ContactForm() {
   const [name, setName] = useState("");
@@ -43,7 +50,17 @@ export function ContactForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, message }),
       });
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        configured?: boolean;
+      };
+
+      if (data.configured === false) {
+        const body = `From: ${name} (${email})\n\n${message}`;
+        window.location.href = buildMailtoLink(undefined, `Message from ${name}`, body);
+        setStatus("not-configured");
+        return;
+      }
       if (!response.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
         setStatus("error");
@@ -56,11 +73,28 @@ export function ContactForm() {
     }
   }
 
-  if (status === "success") {
+  if (status === "success" || status === "not-configured") {
     return (
-      <p role="status" className="text-body text-accent">
-        Thanks for reaching out — we&apos;ll get back to you soon.
-      </p>
+      <div role="status" className="flex flex-col items-center gap-4 py-6 text-center">
+        <span className="flex h-16 w-16 animate-pop-in items-center justify-center rounded-full bg-accent-muted text-accent">
+          <CheckIcon />
+        </span>
+        {status === "success" ? (
+          <>
+            <p className="text-body-lg font-medium text-text-primary">Message sent.</p>
+            <p className="text-body-sm text-text-secondary">
+              Thanks for reaching out — we&apos;ll get back to you soon.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-body-lg font-medium text-text-primary">Almost there.</p>
+            <p className="text-body-sm text-text-secondary">
+              We opened your email app with your message ready — just hit send.
+            </p>
+          </>
+        )}
+      </div>
     );
   }
 
@@ -120,5 +154,19 @@ export function ContactForm() {
         </Button>
       </div>
     </form>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+      <path
+        d="M7 13.5 11 17.5 19.5 8.5"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

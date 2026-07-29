@@ -3,8 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { useRipple } from "@/lib/hooks/useRipple";
+import { buildMailtoLink } from "@/lib/config";
 
-type Status = "idle" | "submitting" | "success" | "error";
+type Status = "idle" | "submitting" | "success" | "error" | "not-configured";
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -38,7 +39,15 @@ export function FooterNewsletterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        configured?: boolean;
+      };
+
+      if (data.configured === false) {
+        setStatus("not-configured");
+        return;
+      }
       if (!response.ok) {
         setError(data.error ?? "Something went wrong.");
         setStatus("error");
@@ -52,7 +61,22 @@ export function FooterNewsletterForm() {
   }
 
   if (status === "success") {
-    return <p className="text-body-sm text-accent">You&apos;re on the list — thanks!</p>;
+    return (
+      <p className="text-body-sm text-accent animate-fade-up">
+        You&apos;re on the list — check your inbox!
+      </p>
+    );
+  }
+
+  if (status === "not-configured") {
+    return (
+      <a
+        href={buildMailtoLink()}
+        className="text-body-sm text-accent underline-offset-4 hover:underline"
+      >
+        Email us directly instead →
+      </a>
+    );
   }
 
   return (

@@ -117,6 +117,15 @@ const config: Config = {
           "0%, 100%": { opacity: "0.15", transform: "scale(1)" },
           "50%": { opacity: "0.5", transform: "scale(1.3)" },
         },
+        "pop-in": {
+          "0%": { opacity: "0", transform: "scale(0.5)" },
+          "60%": { opacity: "1", transform: "scale(1.08)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "fade-up": "fade-up 500ms var(--ease-out) forwards",
@@ -124,6 +133,8 @@ const config: Config = {
         marquee: "marquee 32s linear infinite",
         "blur-in-up": "blur-in-up 700ms var(--ease-out) forwards",
         "particle-pulse": "particle-pulse 4s var(--ease-in-out) infinite",
+        "pop-in": "pop-in 500ms var(--ease-out) forwards",
+        shimmer: "shimmer 1.8s ease-in-out infinite",
       },
     },
   },
