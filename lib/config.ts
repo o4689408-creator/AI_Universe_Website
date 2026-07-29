@@ -74,6 +74,6 @@ export function buildMailtoLink(
 // your profile). Replace with your real URLs; see OWNER_MANUAL.md.
 // ---------------------------------------------------------------------------
 
-export const INSTAGRAM_URL = "https://www.instagram.com/zynthictech_07?igsh=YnpjYzRhem52cmt2";
+export const INSTAGRAM_URL = "https://instagram.com/aiuniverse";
 export const LINKEDIN_URL = "https://linkedin.com/company/aiuniverse";
 export const X_URL = "https://x.com/aiuniverse";

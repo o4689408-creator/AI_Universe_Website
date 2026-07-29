@@ -28,16 +28,31 @@ that file first; every value is documented inline.
    `GMAIL_DEFAULT_BODY` in `lib/config.ts`). This works with zero
    setup — it opens whatever mail app is already the visitor's
    default (Gmail, Outlook, Apple Mail, etc.).
-3. **Newsletter** — the subscribe forms (homepage, footer) call
-   `app/api/newsletter/route.ts`, which needs `RESEND_API_KEY` and
-   `RESEND_AUDIENCE_ID` set as environment variables (see
-   `.env.example`). Get both from https://resend.com. Until they're
-   set, the form shows a clear "not configured yet" message instead of
-   silently losing subscribers.
-4. **Contact form** — `app/api/contact/route.ts` needs the same
+3. **Newsletter — real subscriber storage, works the moment you deploy.**
+   The subscribe forms (homepage, footer) call
+   `app/api/newsletter/route.ts`, which stores every subscriber in
+   **Vercel KV** — a Redis database that's a first-party Vercel
+   add-on, not a separate account or API key to go sign up for.
+   **One-time setup, about 2 minutes:** Vercel dashboard -> your
+   project -> **Storage** tab -> Create Database -> **KV** -> connect
+   it to this project. Vercel injects `KV_REST_API_URL` /
+   `KV_REST_API_TOKEN` automatically — nothing to copy-paste. Until
+   you do this, signups are still accepted (visitors never see an
+   error) but only logged to your Vercel function logs as a stopgap —
+   enable KV for a real, permanent list. You can view/export your
+   subscriber list any time from the Storage tab's data browser.
+
+   Optional, layered on top: set `RESEND_API_KEY` + `RESEND_FROM` (see
+   `.env.example`) to also send a confirmation email on signup; add
+   `RESEND_AUDIENCE_ID` as well to mirror subscribers into a Resend
+   Audience, which is what the automatic notify workflow (below)
+   actually sends broadcasts against.
+4. **Contact form** — `app/api/contact/route.ts` needs
    `RESEND_API_KEY` plus `RESEND_FROM` (a sender address Resend will
    accept — `onboarding@resend.dev` works for testing before you
-   verify your own domain).
+   verify your own domain). If these aren't set, the form
+   automatically falls back to opening the visitor's own email app
+   with the message prefilled — never an error.
 5. **Dictionary lookup** (select a word in an article) works out of
    the box using a free, no-key provider. For a richer English dataset,
    optionally set `WORDS_API_KEY` — see `app/api/dictionary/route.ts`
@@ -287,7 +302,7 @@ same way and needs the same kind of connection.
 All in one file: **`lib/config.ts`**:
 ```ts
 export const YOUTUBE_CHANNEL_URL = "https://www.youtube.com/@ZynthicTech_AI";
-export const INSTAGRAM_URL = "https://www.instagram.com/zynthictech_07?igsh=YnpjYzRhem52cmt2";
+export const INSTAGRAM_URL = "https://instagram.com/aiuniverse";
 export const LINKEDIN_URL = "https://linkedin.com/company/aiuniverse";
 export const X_URL = "https://x.com/aiuniverse";
 export const CONTACT_EMAIL = "storysphere173@gmail.com";

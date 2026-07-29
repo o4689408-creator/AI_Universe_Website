@@ -146,12 +146,18 @@ export function Header({ topics, videos = [] }: HeaderProps) {
             {/* Mobile/tablet menu trigger — visible below the lg
                 breakpoint where the full desktop nav is hidden, so
                 there's always exactly one way to reach navigation,
-                never zero. Fixed 48px touch target. */}
+                never zero. Glassmorphism pill with a soft accent glow
+                on open, fixed 48px touch target. */}
             <button
               type="button"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-text-primary lg:hidden"
+              className={cn(
+                "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border transition-all duration-base ease-out lg:hidden",
+                mobileOpen
+                  ? "border-accent/40 bg-accent-muted text-accent shadow-glow-accent"
+                  : "border-border-subtle bg-bg-surface-1/70 text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-md hover:border-border hover:shadow-md active:scale-95"
+              )}
               onClick={() => setMobileOpen((value) => !value)}
             >
               <MenuIcon open={mobileOpen} />

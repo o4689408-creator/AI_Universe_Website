@@ -3,9 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
 import { useRipple } from "@/lib/hooks/useRipple";
-import { buildMailtoLink } from "@/lib/config";
 
-type Status = "idle" | "submitting" | "success" | "error" | "not-configured";
+type Status = "idle" | "submitting" | "success" | "error";
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -13,8 +12,9 @@ function isValidEmail(value: string) {
 
 /**
  * A compact single-line variant of sections/NewsletterSection.tsx for
- * the footer — same /api/newsletter endpoint, smaller footprint so it
- * fits a footer column instead of a full centered band.
+ * the footer — same /api/newsletter endpoint (Vercel KV storage, no
+ * "not configured" fallback ever shown to visitors), smaller
+ * footprint so it fits a footer column instead of a full band.
  */
 export function FooterNewsletterForm() {
   const [email, setEmail] = useState("");
@@ -39,15 +39,8 @@ export function FooterNewsletterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        configured?: boolean;
-      };
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
 
-      if (data.configured === false) {
-        setStatus("not-configured");
-        return;
-      }
       if (!response.ok) {
         setError(data.error ?? "Something went wrong.");
         setStatus("error");
@@ -62,20 +55,10 @@ export function FooterNewsletterForm() {
 
   if (status === "success") {
     return (
-      <p className="text-body-sm text-accent animate-fade-up">
-        You&apos;re on the list — check your inbox!
+      <p className="flex items-center gap-2 text-body-sm text-accent animate-fade-up">
+        <span aria-hidden="true">🎉</span>
+        Welcome! Check your inbox.
       </p>
-    );
-  }
-
-  if (status === "not-configured") {
-    return (
-      <a
-        href={buildMailtoLink()}
-        className="text-body-sm text-accent underline-offset-4 hover:underline"
-      >
-        Email us directly instead →
-      </a>
     );
   }
 
@@ -92,18 +75,20 @@ export function FooterNewsletterForm() {
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
           autoComplete="email"
+          disabled={status === "submitting"}
           aria-invalid={status === "error"}
-          className="min-w-0 flex-1 rounded-md border border-border bg-bg-base px-3 py-2.5 text-body-sm text-text-primary placeholder:text-text-tertiary focus:border-accent focus:shadow-glow-accent focus:outline-none"
+          className="min-w-0 flex-1 rounded-md border border-border bg-bg-base px-3 py-2.5 text-body-sm text-text-primary placeholder:text-text-tertiary focus:border-accent focus:shadow-glow-accent focus:outline-none disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={status === "submitting"}
           onPointerDown={handleRipple}
           className={cn(
-            "relative shrink-0 overflow-hidden rounded-md bg-accent px-3.5 py-2.5 text-body-sm font-medium text-bg-base",
+            "relative flex shrink-0 items-center gap-1.5 overflow-hidden rounded-md bg-accent px-3.5 py-2.5 text-body-sm font-medium text-bg-base",
             "transition-transform duration-fast ease-out hover:scale-[1.03] active:scale-[0.97] disabled:opacity-40"
           )}
         >
+          {status === "submitting" && <Spinner />}
           {status === "submitting" ? "…" : "Join"}
         </button>
       </div>
@@ -113,5 +98,14 @@ export function FooterNewsletterForm() {
         </p>
       )}
     </form>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" />
+      <path d="M14.5 8a6.5 6.5 0 0 0-6.5-6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
   );
 }

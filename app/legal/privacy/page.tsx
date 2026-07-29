@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
               Your choices
             </h2>
             <p>
-              You can subscribe to the newsletter at any time using
+              You can unsubscribe from the newsletter at any time using
               the link included in every email. To request access to, or
               deletion of, your personal information, contact us at{" "}
               <a
