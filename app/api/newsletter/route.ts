@@ -1,50 +1,62 @@
 import { NextResponse } from "next/server";
 import { SITE_NAME } from "@/lib/config";
+import { getDb, isMongoConfigured } from "@/lib/mongodb";
 
 export const runtime = "nodejs";
 
 /**
  * Newsletter subscription endpoint.
  *
- * STORAGE (required for a real, persistent subscriber list):
- * Vercel KV — a Redis database that's a first-party Vercel add-on, not
- * a separate external account. Enable it once in your Vercel project
- * dashboard ("Storage" tab -> Create Database -> KV) and Vercel
- * injects KV_REST_API_URL / KV_REST_API_TOKEN automatically; nothing
- * to add to code or .env. This talks to it over plain fetch against
- * Upstash's REST API (what Vercel KV runs on) — no SDK dependency.
+ * STORAGE (required for a real, persistent subscriber list): MongoDB
+ * Atlas, via the official `mongodb` driver. Reads MONGODB_URI from the
+ * environment — provided automatically once you connect MongoDB
+ * Atlas to this Vercel project (Vercel project -> Storage/Integrations
+ * -> MongoDB Atlas). Subscribers are upserted into the
+ * `newsletter_subscribers` collection by email (so re-subscribing
+ * never creates a duplicate), with a unique index on `email` created
+ * lazily on first write.
  *
  * EMAIL (optional, layered on top): if RESEND_API_KEY + RESEND_FROM
  * are also set, a confirmation email is sent immediately. If
  * RESEND_AUDIENCE_ID is *also* set, the subscriber is mirrored into
- * that Resend Audience too — Vercel KV is the durable source of truth
+ * that Resend Audience too — MongoDB is the durable source of truth
  * for "who's subscribed," while the Resend Audience mirror is what
  * scripts/notify-from-git-diff.mjs actually sends broadcasts against.
  * None of this is required for signup itself to work — see
  * .env.example for all of it.
  *
- * If KV isn't configured yet, the subscription is still accepted (the
- * visitor is never shown a "not configured" message) and the address
- * is logged to the server's function logs as a stopgap so nothing is
- * silently lost — but this is genuinely a fallback, not a substitute
- * for enabling KV. See OWNER_MANUAL.md for the two-minute setup.
+ * If MONGODB_URI isn't configured yet, the subscription is still
+ * accepted (the visitor is never shown a "not configured" message)
+ * and the address is logged to the server's function logs as a
+ * stopgap so nothing is silently lost — but this is genuinely a
+ * fallback, not a substitute for connecting MongoDB Atlas.
  */
 
-const KV_URL = process.env.KV_REST_API_URL;
-const KV_TOKEN = process.env.KV_REST_API_TOKEN;
+async function storeInMongo(email: string): Promise<boolean> {
+  if (!isMongoConfigured()) return false;
 
-async function storeInKv(email: string): Promise<boolean> {
-  if (!KV_URL || !KV_TOKEN) return false;
+  try {
+    const db = await getDb();
+    const collection = db.collection("newsletter_subscribers");
 
-  const response = await fetch(`${KV_URL}/sadd/newsletter:subscribers/${encodeURIComponent(email)}`, {
-    headers: { Authorization: `Bearer ${KV_TOKEN}` },
-  });
+    // Idempotent — cheap enough to call on every request, and this
+    // guarantees the index exists even if the collection was created
+    // by the very first write below.
+    await collection.createIndex({ email: 1 }, { unique: true });
 
-  if (!response.ok) {
-    console.error("Vercel KV write failed:", response.status, await response.text());
+    await collection.updateOne(
+      { email },
+      {
+        $setOnInsert: { email, subscribedAt: new Date() },
+        $set: { unsubscribed: false },
+      },
+      { upsert: true }
+    );
+    return true;
+  } catch (error) {
+    console.error("MongoDB newsletter write failed:", error);
     return false;
   }
-  return true;
 }
 
 async function addToResendAudience(email: string): Promise<void> {
@@ -65,8 +77,8 @@ async function addToResendAudience(email: string): Promise<void> {
       console.error("Resend audience mirror failed:", response.status, await response.text());
     }
   } catch (error) {
-    // Best-effort — KV (above) is the source of truth for "is this
-    // person subscribed"; this mirror only matters for
+    // Best-effort — MongoDB (above) is the source of truth for "is
+    // this person subscribed"; this mirror only matters for
     // scripts/notify-from-git-diff.mjs being able to reach them later.
     console.error("Resend audience mirror error:", error);
   }
@@ -118,11 +130,11 @@ export async function POST(request: Request) {
   const normalizedEmail = email.trim().toLowerCase();
 
   try {
-    const storedInKv = await storeInKv(normalizedEmail);
-    if (!storedInKv) {
+    const storedInMongo = await storeInMongo(normalizedEmail);
+    if (!storedInMongo) {
       // Stopgap only — see file doc comment. Grep your Vercel function
-      // logs for "NEWSLETTER_SIGNUP" if KV isn't set up yet.
-      console.log(`NEWSLETTER_SIGNUP (KV not configured): ${normalizedEmail}`);
+      // logs for "NEWSLETTER_SIGNUP" if MongoDB isn't set up yet.
+      console.log(`NEWSLETTER_SIGNUP (MongoDB not configured): ${normalizedEmail}`);
     }
 
     await Promise.all([addToResendAudience(normalizedEmail), sendConfirmationEmail(normalizedEmail)]);

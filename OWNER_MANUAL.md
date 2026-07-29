@@ -31,28 +31,32 @@ that file first; every value is documented inline.
 3. **Newsletter — real subscriber storage, works the moment you deploy.**
    The subscribe forms (homepage, footer) call
    `app/api/newsletter/route.ts`, which stores every subscriber in
-   **Vercel KV** — a Redis database that's a first-party Vercel
-   add-on, not a separate account or API key to go sign up for.
-   **One-time setup, about 2 minutes:** Vercel dashboard -> your
-   project -> **Storage** tab -> Create Database -> **KV** -> connect
-   it to this project. Vercel injects `KV_REST_API_URL` /
-   `KV_REST_API_TOKEN` automatically — nothing to copy-paste. Until
-   you do this, signups are still accepted (visitors never see an
-   error) but only logged to your Vercel function logs as a stopgap —
-   enable KV for a real, permanent list. You can view/export your
-   subscriber list any time from the Storage tab's data browser.
+   **MongoDB Atlas** via the official `mongodb` driver (`lib/mongodb.ts`).
+   **One-time setup:** Vercel dashboard -> your project ->
+   Storage/Integrations -> **MongoDB Atlas** -> connect a cluster to
+   this project. Vercel injects `MONGODB_URI` automatically — nothing
+   to copy-paste for production. Subscribers are upserted by email
+   into the `newsletter_subscribers` collection (a unique index on
+   `email` is created automatically on first write, so re-subscribing
+   never creates a duplicate). Until MongoDB is connected, signups are
+   still accepted (visitors never see an error) but only logged to
+   your Vercel function logs as a stopgap — connect MongoDB Atlas for
+   a real, permanent list. You can view/export your subscriber list
+   any time from the Atlas dashboard's collection browser.
 
    Optional, layered on top: set `RESEND_API_KEY` + `RESEND_FROM` (see
    `.env.example`) to also send a confirmation email on signup; add
    `RESEND_AUDIENCE_ID` as well to mirror subscribers into a Resend
    Audience, which is what the automatic notify workflow (below)
    actually sends broadcasts against.
-4. **Contact form** — `app/api/contact/route.ts` needs
-   `RESEND_API_KEY` plus `RESEND_FROM` (a sender address Resend will
-   accept — `onboarding@resend.dev` works for testing before you
-   verify your own domain). If these aren't set, the form
-   automatically falls back to opening the visitor's own email app
-   with the message prefilled — never an error.
+4. **Contact form** — `app/api/contact/route.ts` saves every
+   submission to MongoDB Atlas's `contact_submissions` collection
+   (same `MONGODB_URI` as above — nothing extra to configure). If
+   `MONGODB_URI` isn't set at all, the form automatically falls back
+   to opening the visitor's own email app with the message prefilled
+   instead — never an error. Optionally, set `RESEND_API_KEY` +
+   `RESEND_FROM` as well to also get an immediate notification email
+   for every submission, on top of it being saved.
 5. **Dictionary lookup** (select a word in an article) works out of
    the box using a free, no-key provider. For a richer English dataset,
    optionally set `WORDS_API_KEY` — see `app/api/dictionary/route.ts`

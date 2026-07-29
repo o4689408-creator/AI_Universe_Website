@@ -12,7 +12,7 @@ function isValidEmail(value: string) {
 
 /**
  * A compact single-line variant of sections/NewsletterSection.tsx for
- * the footer — same /api/newsletter endpoint (Vercel KV storage, no
+ * the footer — same /api/newsletter endpoint (MongoDB Atlas storage, no
  * "not configured" fallback ever shown to visitors), smaller
  * footprint so it fits a footer column instead of a full band.
  */

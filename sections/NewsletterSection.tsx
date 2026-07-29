@@ -37,7 +37,7 @@ const CONFETTI_COLORS = ["#4C7DFF", "#7DA2FF", "#FFC24C", "#4CE0B3", "#FF6B9D"];
  * infrequently.
  *
  * Posts to app/api/newsletter/route.ts, which stores the subscriber
- * in Vercel KV (real, persistent — see that route's doc comment) and
+ * in MongoDB Atlas (real, persistent — see that route's doc comment) and
  * layers on a confirmation email + Resend Audience mirror if
  * configured. There is deliberately no "service not configured"
  * fallback state here: a visitor who submits a valid email always
