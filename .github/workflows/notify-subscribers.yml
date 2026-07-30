@@ -1,0 +1,39 @@
+name: Notify subscribers of new content
+
+# Runs automatically on every push to main that adds a new article or
+# changes the video registry — no manual command needed. See
+# scripts/notify-from-git-diff.mjs for exactly how it decides what's
+# new (git diff between the two commit SHAs GitHub gives us below).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/topics/**"
+      - "lib/videos.ts"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth 0 (full history) so `git diff <before> <after>`
+          # in the script always has both commits available locally,
+          # even on a repo's first few pushes.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Send notifications for new content
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.event.after }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_AUDIENCE_ID: ${{ secrets.RESEND_AUDIENCE_ID }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+        run: node scripts/notify-from-git-diff.mjs

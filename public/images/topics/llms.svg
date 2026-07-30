@@ -1,0 +1,24 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg2" cx="70%" cy="25%" r="85%">
+      <stop offset="0%" stop-color="#18181c"/>
+      <stop offset="100%" stop-color="#0a0a0c"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg2)"/>
+  <g fill="none" stroke="#4c7dff">
+    <rect x="180" y="120" width="440" height="70" rx="12" opacity="0.15"/>
+    <rect x="220" y="210" width="360" height="70" rx="12" opacity="0.3"/>
+    <rect x="260" y="300" width="280" height="70" rx="12" opacity="0.55"/>
+    <rect x="300" y="390" width="200" height="60" rx="12" opacity="0.85"/>
+  </g>
+  <g fill="#4c7dff">
+    <circle cx="200" cy="155" r="3" opacity="0.4"/>
+    <circle cx="600" cy="155" r="3" opacity="0.4"/>
+    <circle cx="240" cy="245" r="3.5" opacity="0.55"/>
+    <circle cx="560" cy="245" r="3.5" opacity="0.55"/>
+    <circle cx="280" cy="335" r="4" opacity="0.75"/>
+    <circle cx="520" cy="335" r="4" opacity="0.75"/>
+    <circle cx="400" cy="420" r="5" opacity="1"/>
+  </g>
+</svg>
