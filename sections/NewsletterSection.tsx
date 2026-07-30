@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
 import { AnimatedReveal } from "@/components/ui/AnimatedReveal";
@@ -265,6 +265,18 @@ function SuccessState({
 }
 
 function FloatingParticles() {
+  // Mount-gated: Math.random() runs during SSR too (useMemo doesn't
+  // skip it), so computing these values unconditionally would make
+  // the server-rendered markup and the client's first render disagree
+  // on every particle's position — a real hydration mismatch. Waiting
+  // for the client-only `mounted` flag means both the server render
+  // and the client's *first* render agree (neither renders any
+  // particles yet); the particles then fade in a moment later,
+  // client-side only, which is invisible in practice since they're
+  // purely decorative.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const particles = useMemo(
     () =>
       Array.from({ length: 6 }, (_, index) => ({
@@ -277,6 +289,8 @@ function FloatingParticles() {
       })),
     []
   );
+
+  if (!mounted) return null;
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">

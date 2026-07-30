@@ -16,12 +16,23 @@
        than relying solely on every component individually getting it
        right. This does not mask real overflow bugs — content is still
        fixed at the source (see e.g. StaggeredHeading) — this is a
-       backstop, not a substitute for that. */
-    @apply overflow-x-hidden;
+       backstop, not a substitute for that.
+
+       Uses `clip`, not `hidden`. Setting overflow-x to `hidden` (or
+       `scroll`/`auto`) forces the *other* axis to compute as `auto`
+       per the CSS overflow spec's coercion rule — silently turning
+       <html> into a scroll container. That breaks `position: sticky`
+       (the header stops sticking, or sticks inconsistently) and can
+       reposition `position: fixed` elements (the mobile nav overlay)
+       relative to that container instead of the real viewport — most
+       visible on mobile browsers whose address bar shows/hides during
+       scroll. `clip` is explicitly exempted from that coercion, so it
+       blocks horizontal overflow without any of the above. */
+    @apply overflow-x-clip;
   }
 
   body {
-    @apply bg-bg-base text-text-primary antialiased overflow-x-hidden;
+    @apply bg-bg-base text-text-primary antialiased overflow-x-clip;
     font-feature-settings: "rlig" 1, "calt" 1;
     width: 100%;
   }

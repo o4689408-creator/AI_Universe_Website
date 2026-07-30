@@ -104,24 +104,33 @@ export function Header({ topics, videos = [] }: HeaderProps) {
           <nav className="hidden items-center gap-6 lg:flex">
             <NavMegaItem
               label="Home"
+              icon={<HomeNavIcon />}
               href="/"
               columns={homeMenu}
               featured={featuredForHome}
             />
             <NavMegaItem
               label="Topics"
+              icon={<TopicsNavIcon />}
               href="/topics"
               columns={topicsMenu}
               featured={featuredForTopics}
             />
-            <NavMegaItem label="Videos" href="/videos" columns={videosMenu} />
+            <NavMegaItem label="Videos" icon={<VideosNavIcon />} href="/videos" columns={videosMenu} />
             <NavMegaItem
               label="Explore"
+              icon={<ExploreNavIcon />}
               href="/#explore-your-ai-journey"
               columns={exploreMenu}
               align="right"
             />
-            <NavMegaItem label="About" href="/about" columns={aboutMenu} align="right" />
+            <NavMegaItem
+              label="About"
+              icon={<AboutNavIcon />}
+              href="/about"
+              columns={aboutMenu}
+              align="right"
+            />
           </nav>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
@@ -213,6 +222,54 @@ function BookmarkNavIcon() {
         strokeWidth="1.3"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function HomeNavIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M2.5 7.5 8 3l5.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 6.7V13h8V6.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function TopicsNavIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="2.5" y="3" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="9" y="3" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="2.5" y="9.5" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="9" y="9.5" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
+function VideosNavIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="2" y="4" width="12" height="8" rx="1.8" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M6.7 6.3 9.8 8l-3.1 1.7V6.3Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ExploreNavIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M10 6 8.7 8.7 6 10l1.3-2.7L10 6Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function AboutNavIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M8 7.2v3.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="8" cy="5.2" r="0.8" fill="currentColor" />
     </svg>
   );
 }

@@ -24,8 +24,37 @@ export const SITE_NAME = "AI Universe";
 /** Used as the logo wordmark and in the browser tab title template. */
 export const SITE_LOGO_TEXT = SITE_NAME;
 
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://aiuniverse.com";
+/**
+ * Validates NEXT_PUBLIC_SITE_URL before using it. `??` alone isn't
+ * enough here: it only falls back on `null`/`undefined`, so an env
+ * var accidentally set to an empty string or a value missing the
+ * `https://` scheme (e.g. "aiuniverse.com") would sail straight
+ * through and later blow up wherever it's turned into a URL object —
+ * specifically `metadataBase: new URL(SITE_URL)` in app/layout.tsx,
+ * which is what Next.js uses to resolve the automatic
+ * `opengraph-image` file convention into an absolute image URL. That
+ * resolution only runs for routes with an image to resolve, which is
+ * why a bad value here surfaces as "Invalid URL" specifically on
+ * /opengraph-image and /topics/[slug]/opengraph-image rather than on
+ * every page.
+ */
+function resolveSiteUrl(): string {
+  const value = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!value) return "https://aiuniverse.com";
+
+  try {
+    // eslint-disable-next-line no-new -- validation only, we return the original string
+    new URL(value);
+    return value;
+  } catch {
+    console.warn(
+      `NEXT_PUBLIC_SITE_URL is set to an invalid URL ("${value}") — falling back to https://aiuniverse.com. It must be a full absolute URL including the scheme, e.g. "https://yourdomain.com".`
+    );
+    return "https://aiuniverse.com";
+  }
+}
+
+export const SITE_URL = resolveSiteUrl();
 
 // ---------------------------------------------------------------------------
 // SEO defaults

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 interface NavMegaItemProps {
   label: string;
+  icon?: React.ReactNode;
   href?: string;
   onClick?: () => void;
   columns: MegaMenuColumn[];
@@ -21,6 +22,7 @@ const CLOSE_DELAY_MS = 200;
 
 export function NavMegaItem({
   label,
+  icon,
   href,
   onClick,
   columns,
@@ -78,6 +80,7 @@ export function NavMegaItem({
     >
       <NavItem
         label={label}
+        icon={icon}
         active={href ? pathname === href : false}
         {...(href ? { href } : { onClick: onClick ?? (() => undefined) })}
       />

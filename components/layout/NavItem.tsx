@@ -7,6 +7,7 @@ import { useMagneticHover } from "@/lib/hooks/useMagneticHover";
 
 interface NavItemBaseProps {
   label: ReactNode;
+  icon?: ReactNode;
   active?: boolean;
 }
 
@@ -23,7 +24,13 @@ interface NavItemButtonProps extends NavItemBaseProps {
 type NavItemProps = NavItemLinkProps | NavItemButtonProps;
 
 const baseClasses =
-  "group relative inline-block py-2 text-body-sm transition-[color,text-shadow] duration-fast";
+  "group relative inline-flex items-center gap-1.5 py-2 text-body-sm transition-[color,text-shadow] duration-fast";
+
+const iconClasses = (active: boolean) =>
+  cn(
+    "transition-all duration-base ease-out",
+    active ? "text-accent" : "text-text-tertiary group-hover:text-accent group-hover:scale-110"
+  );
 
 const underlineClasses = (active: boolean) =>
   cn(
@@ -39,7 +46,9 @@ const underlineClasses = (active: boolean) =>
  *
  * Adds a very subtle magnetic-hover nudge (desktop only, reduced-
  * motion aware) on top of the existing underline reveal + active-state
- * indicator, plus a soft accent text-glow on hover/active.
+ * indicator, plus a soft accent text-glow on hover/active. The
+ * optional icon (rendered before the label) tints and scales up
+ * slightly on hover/active, in sync with the label's own glow.
  */
 export function NavItem(props: NavItemProps) {
   const active = props.active ?? false;
@@ -55,6 +64,7 @@ export function NavItem(props: NavItemProps) {
         href={props.href}
         className={cn(baseClasses, textClass)}
       >
+        {props.icon && <span className={iconClasses(active)}>{props.icon}</span>}
         {props.label}
         <span className={underlineClasses(active)} aria-hidden="true" />
       </Link>
@@ -68,6 +78,7 @@ export function NavItem(props: NavItemProps) {
       onClick={props.onClick}
       className={cn(baseClasses, textClass)}
     >
+      {props.icon && <span className={iconClasses(active)}>{props.icon}</span>}
       {props.label}
       <span className={underlineClasses(active)} aria-hidden="true" />
     </button>
