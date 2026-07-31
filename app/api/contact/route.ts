@@ -111,7 +111,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ configured: false }, { status: 200 });
     }
 
-    await sendNotificationEmail(entry);
+    // Not awaited, same reasoning as app/api/newsletter/route.ts: the
+    // submission is safely durable the moment MongoDB confirms the
+    // write above, so there's no reason to make the visitor wait on
+    // an optional notification email too. sendNotificationEmail
+    // already catches its own errors and never throws; `.catch()`
+    // here is only a safety net against an unexpected synchronous
+    // throw.
+    sendNotificationEmail(entry).catch((error) => {
+      console.error("Contact notification email task failed:", error);
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

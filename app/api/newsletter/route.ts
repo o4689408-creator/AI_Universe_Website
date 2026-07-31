@@ -32,6 +32,12 @@ export const runtime = "nodejs";
  * fallback, not a substitute for connecting MongoDB Atlas.
  */
 
+// Ensures the unique index exists exactly once per warm serverless
+// instance, not on every request — createIndex is idempotent, but it
+// still costs a real round-trip to Atlas, and doing that on every
+// single signup was adding needless latency to every request.
+let indexEnsured = false;
+
 async function storeInMongo(email: string): Promise<boolean> {
   if (!isMongoConfigured()) return false;
 
@@ -39,10 +45,10 @@ async function storeInMongo(email: string): Promise<boolean> {
     const db = await getDb();
     const collection = db.collection("newsletter_subscribers");
 
-    // Idempotent — cheap enough to call on every request, and this
-    // guarantees the index exists even if the collection was created
-    // by the very first write below.
-    await collection.createIndex({ email: 1 }, { unique: true });
+    if (!indexEnsured) {
+      await collection.createIndex({ email: 1 }, { unique: true });
+      indexEnsured = true;
+    }
 
     await collection.updateOne(
       { email },
@@ -137,7 +143,30 @@ export async function POST(request: Request) {
       console.log(`NEWSLETTER_SIGNUP (MongoDB not configured): ${normalizedEmail}`);
     }
 
-    await Promise.all([addToResendAudience(normalizedEmail), sendConfirmationEmail(normalizedEmail)]);
+    // Deliberately NOT awaited. The visitor is subscribed the moment
+    // MongoDB confirms the write above — a confirmation email is a
+    // nice-to-have, not something worth making them wait ~1-2 extra
+    // network round-trips for. Both functions already catch their own
+    // errors internally and never throw, so this can't reject; the
+    // `.catch()` here is only a safety net against an unexpected
+    // synchronous throw, to guarantee this never surfaces as an
+    // unhandled promise rejection in the function logs.
+    //
+    // Caveat worth knowing: on serverless platforms (Vercel), work
+    // kicked off after the response is returned is "best effort" — the
+    // platform generally keeps the instance alive long enough to
+    // finish a single quick fetch, but it isn't a hard guarantee the
+    // way `await` is. That trade-off is intentional here: an
+    // optional confirmation email arriving a little late (or, in a
+    // rare worst case, not at all) is a fully acceptable cost for
+    // making every signup feel instant, especially since MongoDB
+    // (the actual subscriber record) is never at risk either way.
+    Promise.all([
+      addToResendAudience(normalizedEmail),
+      sendConfirmationEmail(normalizedEmail),
+    ]).catch((error) => {
+      console.error("Newsletter background email tasks failed:", error);
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
