@@ -17,7 +17,7 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} https://plausible.io`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://i.ytimg.com",
+  "img-src 'self' data: https://i.ytimg.com https://images.unsplash.com",
   "font-src 'self'",
   `connect-src 'self' https://plausible.io ${isDev ? "ws://localhost:* http://localhost:*" : ""}`,
   "frame-src https://www.youtube.com",
@@ -46,12 +46,17 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    // YouTube thumbnails + future CDN-hosted media are the only external
-    // image sources for v1. Add new hosts deliberately, not with a wildcard.
+    // YouTube thumbnails + Unsplash (royalty-free article imagery) are
+    // the external image sources for v1. Add new hosts deliberately,
+    // not with a wildcard.
     remotePatterns: [
       {
         protocol: "https",
         hostname: "i.ytimg.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
       },
     ],
   },

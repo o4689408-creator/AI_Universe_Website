@@ -9,6 +9,13 @@ interface NavItemBaseProps {
   label: ReactNode;
   icon?: ReactNode;
   active?: boolean;
+  /**
+   * Set when this item controls an expandable mega-menu panel — adds
+   * `aria-expanded`/`aria-haspopup` (so assistive tech announces it as
+   * a disclosure control, not a plain link) and a small chevron that
+   * rotates open. Omit entirely for plain nav links with no panel.
+   */
+  expanded?: boolean;
 }
 
 interface NavItemLinkProps extends NavItemBaseProps {
@@ -56,6 +63,10 @@ export function NavItem(props: NavItemProps) {
   const textClass = active
     ? "text-text-primary [text-shadow:0_0_12px_rgba(76,125,255,0.35)]"
     : "text-text-secondary hover:text-text-primary hover:[text-shadow:0_0_10px_rgba(76,125,255,0.25)]";
+  const hasPanel = props.expanded !== undefined;
+  const ariaProps = hasPanel
+    ? { "aria-haspopup": "true" as const, "aria-expanded": props.expanded }
+    : {};
 
   if (props.href) {
     return (
@@ -63,9 +74,11 @@ export function NavItem(props: NavItemProps) {
         ref={magneticRef as React.Ref<HTMLAnchorElement>}
         href={props.href}
         className={cn(baseClasses, textClass)}
+        {...ariaProps}
       >
         {props.icon && <span className={iconClasses(active)}>{props.icon}</span>}
         {props.label}
+        {hasPanel && <ChevronIcon open={props.expanded ?? false} />}
         <span className={underlineClasses(active)} aria-hidden="true" />
       </Link>
     );
@@ -77,10 +90,30 @@ export function NavItem(props: NavItemProps) {
       type="button"
       onClick={props.onClick}
       className={cn(baseClasses, textClass)}
+      {...ariaProps}
     >
       {props.icon && <span className={iconClasses(active)}>{props.icon}</span>}
       {props.label}
+      {hasPanel && <ChevronIcon open={props.expanded ?? false} />}
       <span className={underlineClasses(active)} aria-hidden="true" />
     </button>
+  );
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="none"
+      aria-hidden="true"
+      className={cn(
+        "text-text-tertiary transition-transform duration-base ease-out",
+        open && "-rotate-180"
+      )}
+    >
+      <path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

@@ -84,97 +84,122 @@ export function Header({ topics, videos = [] }: HeaderProps) {
   }, [topics]);
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full max-w-[100vw] border-b border-border-subtle bg-bg-base/80 pt-safe backdrop-blur-md transition-shadow duration-slow ease-out",
-        scrolled && "shadow-md"
-      )}
-    >
-      <Container>
-        <div className="flex h-16 w-full min-w-0 items-center justify-between gap-3">
-          <Logo />
+    <>
+      <header
+        className={cn(
+          "sticky top-0 z-50 w-full max-w-[100vw] border-b border-border-subtle bg-bg-base/80 pt-safe backdrop-blur-md transition-shadow duration-slow ease-out",
+          scrolled && "shadow-md"
+        )}
+      >
+        <Container>
+          <div className="flex h-16 w-full min-w-0 items-center justify-between gap-3">
+            <Logo />
 
-          {/* Desktop mega-menu nav — only shown at lg+ where there's
-              guaranteed room for the full label set plus the trailing
-              actions without squeezing the logo. Showing this as early
-              as md (768px) left a "squeeze zone" on tablets/narrow
-              desktop windows where the logo and nav visually crowded
-              each other — bumping to lg removes that zone entirely
-              rather than trying to out-shrink it with flex hacks. */}
-          <nav className="hidden items-center gap-6 lg:flex">
-            <NavMegaItem
-              label="Home"
-              icon={<HomeNavIcon />}
-              href="/"
-              columns={homeMenu}
-              featured={featuredForHome}
-            />
-            <NavMegaItem
-              label="Topics"
-              icon={<TopicsNavIcon />}
-              href="/topics"
-              columns={topicsMenu}
-              featured={featuredForTopics}
-            />
-            <NavMegaItem label="Videos" icon={<VideosNavIcon />} href="/videos" columns={videosMenu} />
-            <NavMegaItem
-              label="Explore"
-              icon={<ExploreNavIcon />}
-              href="/#explore-your-ai-journey"
-              columns={exploreMenu}
-              align="right"
-            />
-            <NavMegaItem
-              label="About"
-              icon={<AboutNavIcon />}
-              href="/about"
-              columns={aboutMenu}
-              align="right"
-            />
-          </nav>
+            {/* Desktop mega-menu nav — only shown at lg+ where there's
+                guaranteed room for the full label set plus the trailing
+                actions without squeezing the logo. Showing this as early
+                as md (768px) left a "squeeze zone" on tablets/narrow
+                desktop windows where the logo and nav visually crowded
+                each other — bumping to lg removes that zone entirely
+                rather than trying to out-shrink it with flex hacks. */}
+            <nav className="hidden items-center gap-6 lg:flex">
+              <NavMegaItem
+                label="Home"
+                icon={<HomeNavIcon />}
+                href="/"
+                columns={homeMenu}
+                featured={featuredForHome}
+              />
+              <NavMegaItem
+                label="Topics"
+                icon={<TopicsNavIcon />}
+                href="/topics"
+                columns={topicsMenu}
+                featured={featuredForTopics}
+              />
+              <NavMegaItem label="Videos" icon={<VideosNavIcon />} href="/videos" columns={videosMenu} />
+              <NavMegaItem
+                label="Explore"
+                icon={<ExploreNavIcon />}
+                href="/#explore-your-ai-journey"
+                columns={exploreMenu}
+                align="right"
+              />
+              <NavMegaItem
+                label="About"
+                icon={<AboutNavIcon />}
+                href="/about"
+                columns={aboutMenu}
+                align="right"
+              />
+            </nav>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
-            {/* Always visible — on every breakpoint, on every page —
-                rather than hidden until the mobile panel is opened. */}
-            <ThemeToggle />
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
+              {/* Always visible — on every breakpoint, on every page —
+                  rather than hidden until the mobile panel is opened. */}
+              <ThemeToggle />
 
-            <a
-              href="/library"
-              aria-label="Your library"
-              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors duration-fast hover:text-text-primary sm:flex"
-            >
-              <BookmarkNavIcon />
-            </a>
+              <a
+                href="/library"
+                aria-label="Your library"
+                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors duration-fast hover:text-text-primary sm:flex"
+              >
+                <BookmarkNavIcon />
+              </a>
 
-            <div className="hidden lg:block">
-              <Button href="/topics" size="md">
-                Explore Topics
-              </Button>
+              <div className="hidden lg:block">
+                <Button href="/topics" size="md">
+                  Explore Topics
+                </Button>
+              </div>
+
+              {/* Mobile/tablet menu trigger — visible below the lg
+                  breakpoint where the full desktop nav is hidden, so
+                  there's always exactly one way to reach navigation,
+                  never zero. Glassmorphism pill with a soft accent glow
+                  on open, fixed 48px touch target. z-[60], one above
+                  the header's own z-50, so it's never visually
+                  obscured by anything else painted within the header. */}
+              <button
+                type="button"
+                aria-label={mobileOpen ? "Close menu" : "Open menu"}
+                aria-expanded={mobileOpen}
+                className={cn(
+                  "relative z-[60] flex h-12 w-12 shrink-0 items-center justify-center rounded-full border transition-all duration-base ease-out lg:hidden",
+                  mobileOpen
+                    ? "border-accent/40 bg-accent-muted text-accent shadow-glow-accent"
+                    : "border-border-subtle bg-bg-surface-1/70 text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-md hover:border-border hover:shadow-md active:scale-95"
+                )}
+                onClick={() => setMobileOpen((value) => !value)}
+              >
+                <MenuIcon open={mobileOpen} />
+              </button>
             </div>
-
-            {/* Mobile/tablet menu trigger — visible below the lg
-                breakpoint where the full desktop nav is hidden, so
-                there's always exactly one way to reach navigation,
-                never zero. Glassmorphism pill with a soft accent glow
-                on open, fixed 48px touch target. */}
-            <button
-              type="button"
-              aria-label={mobileOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileOpen}
-              className={cn(
-                "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border transition-all duration-base ease-out lg:hidden",
-                mobileOpen
-                  ? "border-accent/40 bg-accent-muted text-accent shadow-glow-accent"
-                  : "border-border-subtle bg-bg-surface-1/70 text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-md hover:border-border hover:shadow-md active:scale-95"
-              )}
-              onClick={() => setMobileOpen((value) => !value)}
-            >
-              <MenuIcon open={mobileOpen} />
-            </button>
           </div>
-        </div>
-      </Container>
+        </Container>
+      </header>
 
+      {/*
+        CRITICAL: MobileNav and CommandPalette are full-screen
+        `position: fixed` overlays, and they render here — as siblings
+        AFTER </header> closes — deliberately, not as children of
+        <header>. The header has `backdrop-blur-md` (a backdrop-filter),
+        and per the CSS Filter Effects spec, any element with a
+        non-none `filter`/`backdrop-filter` becomes the *containing
+        block* for its `position: fixed` (and absolute) descendants
+        instead of the viewport. Concretely: a fixed `inset-0` overlay
+        nested inside the header would resolve its 0/0/0/0 offsets
+        against the header's own ~64px-tall box, not the real
+        viewport — visually trapping a "full-screen" panel inside a
+        sliver at the top of the screen. This is confirmed browser
+        behavior (Chrome, Firefox, and Safari all implement this), not
+        a Tailwind or React quirk, and it silently breaks regardless of
+        how correct the overlay's own internal CSS is. Keeping these
+        two components as direct children of the fragment here (i.e.
+        genuine siblings of <header> in the real DOM, both ultimately
+        rendered straight under <body>) is what lets `fixed inset-0`
+        mean what it says.
+      */}
       <MobileNav
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
@@ -187,7 +212,7 @@ export function Header({ topics, videos = [] }: HeaderProps) {
         topics={topics}
         videos={videos}
       />
-    </header>
+    </>
   );
 }
 

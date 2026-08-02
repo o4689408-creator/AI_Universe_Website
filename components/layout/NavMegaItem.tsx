@@ -54,6 +54,23 @@ export function NavMegaItem({
     closeTimeout.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
   }
 
+  // React's `onBlur` bubbles from every descendant (unlike the native
+  // DOM `blur` event), so a plain `onBlur={closeWithDelay}` on this
+  // wrapper fired every time focus moved from the trigger link to the
+  // *first link inside the panel itself* — i.e. exactly the keyboard
+  // interaction of tabbing into the menu the user is trying to use.
+  // CLOSE_DELAY_MS papered over it most of the time, but it was a real
+  // race, not a guarantee. Checking `relatedTarget` (where focus is
+  // headed) against whether it's still inside this wrapper fixes it
+  // properly: only start the close timer when focus is actually
+  // leaving the menu entirely.
+  function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
+    if (isTouchDevice.current) return;
+    const nextFocusTarget = event.relatedTarget as Node | null;
+    if (nextFocusTarget && wrapperRef.current?.contains(nextFocusTarget)) return;
+    closeWithDelay();
+  }
+
   function closeNow() {
     setOpen(false);
     wrapperRef.current?.querySelector<HTMLElement>("a,button")?.focus();
@@ -76,18 +93,20 @@ export function NavMegaItem({
       onMouseEnter={openNow}
       onMouseLeave={closeWithDelay}
       onFocus={openNow}
-      onBlur={closeWithDelay}
+      onBlur={handleBlur}
     >
       <NavItem
         label={label}
         icon={icon}
+        expanded={open}
         active={href ? pathname === href : false}
         {...(href ? { href } : { onClick: onClick ?? (() => undefined) })}
       />
 
       <div
         className={cn(
-          "absolute top-full z-40 mt-3 w-[420px] origin-top overflow-hidden rounded-2xl border border-border-subtle bg-bg-surface-1/85 shadow-[var(--shadow-lg),var(--shadow-glow-accent)] backdrop-blur-2xl ring-1 ring-white/[0.04] transition-all duration-slow ease-out",
+          "absolute top-full z-40 mt-3 origin-top overflow-hidden rounded-2xl border border-border-subtle bg-bg-surface-1/90 shadow-[var(--shadow-lg),var(--shadow-glow-accent)] backdrop-blur-2xl ring-1 ring-white/[0.04] transition-all duration-slow ease-out",
+          featured ? "w-[560px]" : "w-[340px]",
           align === "right" ? "right-0" : "left-0",
           open
             ? "translate-y-0 scale-100 opacity-100"
@@ -107,6 +126,7 @@ export function NavMegaItem({
           columns={columns}
           featured={featured}
           align={align}
+          open={open}
           onLinkClick={closeNow}
           onSearchAction={() => {
             closeNow();

@@ -17,6 +17,15 @@ import type { Video } from "@/types/content";
  */
 export const videos: Video[] = [
   {
+    id: "gpt-5-6-and-the-future-of-work",
+    slug: "gpt-5-6-and-the-future-of-work",
+    title: "GPT-5.6 Is Here — Is Your Job Safe?",
+    youtubeId: "5V2H8NyEhz0",
+    publishedAt: "2026-07-31",
+    thumbnailUrl: "https://i.ytimg.com/vi/5V2H8NyEhz0/hqdefault.jpg",
+    companionTopicSlug: "gpt-5-6-and-the-future-of-work",
+  },
+  {
     id: "how-transformers-actually-work",
     slug: "how-transformers-actually-work",
     title: "How Transformers Actually Work",
