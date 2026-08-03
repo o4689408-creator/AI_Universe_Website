@@ -50,13 +50,27 @@ async function storeInMongo(email: string): Promise<boolean> {
       indexEnsured = true;
     }
 
+    // w:1 (acknowledged by the primary only, not the full replica set)
+    // trades a small amount of durability for measurably lower write
+    // latency — an acceptable trade for a newsletter list (if a
+    // primary failover loses the very last unreplicated write in an
+    // extremely rare window, the cost is one subscriber re-submitting
+    // the form, not lost financial or account data).
+    //
+    // The unique index on `email` (created above) plus this upsert is
+    // the actual duplicate-prevention mechanism: re-submitting the
+    // same address updates the existing document instead of creating
+    // a second one. The response is identical either way (see the
+    // route handler) rather than telling a visitor "you're already
+    // subscribed" — which would leak whether an email address exists
+    // in the list, the same reason password-reset flows avoid it.
     await collection.updateOne(
       { email },
       {
         $setOnInsert: { email, subscribedAt: new Date() },
         $set: { unsubscribed: false },
       },
-      { upsert: true }
+      { upsert: true, writeConcern: { w: 1 } }
     );
     return true;
   } catch (error) {

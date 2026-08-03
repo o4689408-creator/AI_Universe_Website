@@ -6,23 +6,14 @@ import { cn } from "@/lib/utils";
 interface DictionaryEntry {
   word: string;
   phonetic: string | null;
-  audioUrl: string | null;
   meanings: {
     partOfSpeech: string;
     definitions: string[];
-    synonyms: string[];
     example: string | null;
   }[];
 }
 
-const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "es", label: "Spanish" },
-  { code: "fr", label: "French" },
-  { code: "hi", label: "Hindi" },
-];
-
-type Status = "idle" | "loading" | "success" | "error";
+type Status = "loading" | "success" | "error";
 
 interface PopoverState {
   word: string;
@@ -30,22 +21,86 @@ interface PopoverState {
   left: number;
 }
 
+const WORD_PATTERN = /^[A-Za-z][A-Za-z'-]{1,29}$/;
+const POPOVER_WIDTH = 300;
+const VIEWPORT_MARGIN = 12;
+
 /**
- * Wraps article body content. Listens for the reader selecting a
- * single word (mouseup within the wrapped region) and shows a floating
- * card with its definition, pronunciation, synonyms, an example
- * sentence, and a language selector — powered by
- * app/api/dictionary/route.ts.
+ * Finds the exact word under a click/tap point using caret
+ * hit-testing — deliberately NOT by wrapping every word in the
+ * article in its own <span>. Wrapping would mean thousands of extra
+ * DOM nodes for a single long-form article (real cost to layout,
+ * paint, and memory), and it also isn't necessary: browsers already
+ * expose an API for "what text is at this exact pixel."
  *
- * Deliberately word-only (not phrase lookup): selecting multiple words
- * or clicking without selecting anything just does nothing, rather
- * than guessing at partial matches.
+ * Uses `caretRangeFromPoint` (Chrome/Safari) with a
+ * `caretPositionFromPoint` (Firefox/spec) fallback, then expands left
+ * and right from that character offset within the same text node to
+ * find the word's boundaries. Returns null for punctuation-only
+ * clicks, clicks with no usable API, or clicks landing outside any
+ * text node.
+ */
+function findWordAtPoint(x: number, y: number): { word: string; rect: DOMRect } | null {
+  const doc = document as Document & {
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+  };
+
+  let node: Node | null = null;
+  let offset = 0;
+
+  if (typeof document.caretRangeFromPoint === "function") {
+    const range = document.caretRangeFromPoint(x, y);
+    if (!range) return null;
+    node = range.startContainer;
+    offset = range.startOffset;
+  } else if (typeof doc.caretPositionFromPoint === "function") {
+    const position = doc.caretPositionFromPoint(x, y);
+    if (!position) return null;
+    node = position.offsetNode;
+    offset = position.offset;
+  } else {
+    return null;
+  }
+
+  if (!node || node.nodeType !== Node.TEXT_NODE || !node.textContent) return null;
+
+  const text = node.textContent;
+  const isWordChar = (char: string) => /[A-Za-z'-]/.test(char);
+
+  if (offset < text.length && !isWordChar(text[offset] ?? "") && offset > 0) {
+    offset -= 1;
+  }
+  if (offset >= text.length || !isWordChar(text[offset] ?? "")) return null;
+
+  let start = offset;
+  let end = offset + 1;
+  while (start > 0 && isWordChar(text[start - 1] ?? "")) start -= 1;
+  while (end < text.length && isWordChar(text[end] ?? "")) end += 1;
+
+  const word = text.slice(start, end).replace(/^['-]+|['-]+$/g, "");
+  if (!WORD_PATTERN.test(word)) return null;
+
+  const wordRange = document.createRange();
+  wordRange.setStart(node, start);
+  wordRange.setEnd(node, end);
+  const rect = wordRange.getBoundingClientRect();
+  if (rect.width === 0 && rect.height === 0) return null;
+
+  return { word, rect };
+}
+
+/**
+ * Wraps article body content. A single click or tap directly on a
+ * word shows a compact popup with a one-sentence definition — no
+ * drag-to-select gesture required, so it behaves identically on
+ * desktop (mouse click) and mobile (tap), which was the actual bug in
+ * the previous selection-based implementation: `mouseup`-after-drag
+ * doesn't correspond to any single, discoverable mobile gesture.
  */
 export function DictionaryPopover({ children }: { children: ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [popover, setPopover] = useState<PopoverState | null>(null);
-  const [lang, setLang] = useState("en");
-  const [status, setStatus] = useState<Status>("idle");
+  const [status, setStatus] = useState<Status>("loading");
   const [entry, setEntry] = useState<DictionaryEntry | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,29 +108,30 @@ export function DictionaryPopover({ children }: { children: ReactNode }) {
     const container = containerRef.current;
     if (!container) return;
 
-    function handleMouseUp() {
-      const selection = window.getSelection();
-      const text = selection?.toString().trim() ?? "";
+    function handleClick(event: MouseEvent) {
+      // Don't hijack real interactive elements (links, buttons, the
+      // popover card itself, inline code).
+      const target = event.target as HTMLElement;
+      if (target.closest("a, button, code, pre, #dictionary-popover-card")) return;
 
-      if (!text || !/^[a-zA-Z'-]{2,30}$/.test(text)) {
-        return;
-      }
-      if (!selection || selection.rangeCount === 0) return;
+      const hit = findWordAtPoint(event.clientX, event.clientY);
+      if (!hit) return;
 
-      const range = selection.getRangeAt(0);
-      const anchorNode = range.commonAncestorContainer;
-      if (!container || !container.contains(anchorNode)) return;
+      const idealLeft = hit.rect.left + hit.rect.width / 2 + window.scrollX;
+      const clampedLeft = Math.min(
+        Math.max(idealLeft, VIEWPORT_MARGIN + POPOVER_WIDTH / 2),
+        window.innerWidth + window.scrollX - VIEWPORT_MARGIN - POPOVER_WIDTH / 2
+      );
 
-      const rect = range.getBoundingClientRect();
       setPopover({
-        word: text,
-        top: rect.bottom + window.scrollY + 10,
-        left: rect.left + window.scrollX + rect.width / 2,
+        word: hit.word,
+        top: hit.rect.bottom + window.scrollY + 10,
+        left: clampedLeft,
       });
     }
 
-    container.addEventListener("mouseup", handleMouseUp);
-    return () => container.removeEventListener("mouseup", handleMouseUp);
+    container.addEventListener("click", handleClick);
+    return () => container.removeEventListener("click", handleClick);
   }, []);
 
   useEffect(() => {
@@ -86,7 +142,7 @@ export function DictionaryPopover({ children }: { children: ReactNode }) {
     setError(null);
     setEntry(null);
 
-    fetch(`/api/dictionary?word=${encodeURIComponent(popover.word)}&lang=${lang}`)
+    fetch(`/api/dictionary?word=${encodeURIComponent(popover.word)}&lang=en`)
       .then(async (response) => {
         const data = await response.json();
         if (cancelled) return;
@@ -100,7 +156,7 @@ export function DictionaryPopover({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (!cancelled) {
-          setError("Something went wrong looking that up.");
+          setError("Couldn't look that up right now.");
           setStatus("error");
         }
       });
@@ -108,29 +164,41 @@ export function DictionaryPopover({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [popover, lang]);
+  }, [popover]);
 
   useEffect(() => {
     if (!popover) return;
     function handleClickAway(event: MouseEvent) {
       const card = document.getElementById("dictionary-popover-card");
-      if (card && !card.contains(event.target as Node)) {
-        setPopover(null);
-      }
+      if (card && !card.contains(event.target as Node)) setPopover(null);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setPopover(null);
     }
     function handleScroll() {
       setPopover(null);
     }
-    document.addEventListener("mousedown", handleClickAway);
+    // Click-away listens on the next tick — otherwise the very click
+    // that opened the popover (which bubbles to document) would
+    // immediately close it again.
+    const id = setTimeout(() => {
+      document.addEventListener("click", handleClickAway);
+    }, 0);
+    document.addEventListener("keydown", handleKeyDown);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
-      document.removeEventListener("mousedown", handleClickAway);
+      clearTimeout(id);
+      document.removeEventListener("click", handleClickAway);
+      document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("scroll", handleScroll);
     };
   }, [popover]);
 
+  const primaryMeaning = entry?.meanings[0];
+  const primaryDefinition = primaryMeaning?.definitions[0];
+
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative [&_*]:cursor-text">
       {children}
 
       {popover && (
@@ -139,89 +207,43 @@ export function DictionaryPopover({ children }: { children: ReactNode }) {
           role="dialog"
           aria-label={`Definition of ${popover.word}`}
           style={{ top: popover.top, left: popover.left }}
-          className="absolute z-50 w-[280px] -translate-x-1/2 rounded-xl border border-border bg-bg-surface-1 p-4 shadow-lg animate-fade-up sm:w-80"
+          className="absolute z-50 w-[calc(100vw-24px)] max-w-[300px] -translate-x-1/2 animate-pop-in overflow-hidden rounded-2xl border border-accent/25 bg-bg-surface-1/95 shadow-[var(--shadow-lg),var(--shadow-glow-accent)] backdrop-blur-xl"
         >
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-body-sm font-semibold capitalize text-text-primary">
+          <div className="flex items-start justify-between gap-3 border-b border-border-subtle px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-body-sm font-semibold capitalize text-text-primary">
                 {popover.word}
               </p>
-              {entry?.phonetic && (
-                <p className="text-label text-text-tertiary">{entry.phonetic}</p>
+              {primaryMeaning?.partOfSpeech && (
+                <p className="text-label italic text-text-tertiary">{primaryMeaning.partOfSpeech}</p>
               )}
             </div>
-            <div className="flex items-center gap-1.5">
-              {entry?.audioUrl && (
-                <button
-                  type="button"
-                  aria-label="Play pronunciation"
-                  onClick={() => new Audio(entry.audioUrl!).play().catch(() => undefined)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle text-text-secondary transition-colors duration-fast hover:text-accent"
-                >
-                  <SpeakerIcon />
-                </button>
-              )}
-              <button
-                type="button"
-                aria-label="Close"
-                onClick={() => setPopover(null)}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle text-text-secondary transition-colors duration-fast hover:text-text-primary"
-              >
-                <CloseIcon />
-              </button>
-            </div>
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setPopover(null)}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-tertiary transition-colors duration-fast hover:bg-bg-surface-2 hover:text-text-primary"
+            >
+              <CloseIcon />
+            </button>
           </div>
 
-          <div className="mt-2 flex flex-wrap gap-1">
-            {LANGUAGES.map((option) => (
-              <button
-                key={option.code}
-                type="button"
-                onClick={() => setLang(option.code)}
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-label transition-colors duration-fast",
-                  lang === option.code
-                    ? "bg-accent-muted text-accent"
-                    : "text-text-tertiary hover:text-text-primary"
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-3 max-h-64 overflow-y-auto pr-1">
+          <div className="px-4 py-3.5">
             {status === "loading" && (
-              <p className="text-body-sm text-text-tertiary">Looking it up…</p>
+              <div className="flex items-center gap-2 text-body-sm text-text-tertiary">
+                <Spinner />
+                Looking it up…
+              </div>
             )}
-            {status === "error" && (
-              <p className="text-body-sm text-text-tertiary">{error}</p>
-            )}
-            {status === "success" && entry && (
-              <div className="flex flex-col gap-3">
-                {entry.meanings.slice(0, 3).map((meaning, index) => (
-                  <div key={`${meaning.partOfSpeech}-${index}`}>
-                    <p className="text-label uppercase text-text-tertiary">
-                      {meaning.partOfSpeech}
-                    </p>
-                    <ol className="mt-1 list-decimal space-y-1 pl-4 text-body-sm text-text-secondary">
-                      {meaning.definitions.map((definition, defIndex) => (
-                        <li key={defIndex}>{definition}</li>
-                      ))}
-                    </ol>
-                    {meaning.example && (
-                      <p className="mt-1 text-body-sm italic text-text-tertiary">
-                        &ldquo;{meaning.example}&rdquo;
-                      </p>
-                    )}
-                    {meaning.synonyms.length > 0 && (
-                      <p className="mt-1 text-body-sm text-text-tertiary">
-                        <span className="text-text-secondary">Synonyms: </span>
-                        {meaning.synonyms.join(", ")}
-                      </p>
-                    )}
-                  </div>
-                ))}
+            {status === "error" && <p className="text-body-sm text-text-tertiary">{error}</p>}
+            {status === "success" && primaryDefinition && (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-body-sm leading-snug text-text-primary">{primaryDefinition}</p>
+                {primaryMeaning?.example && (
+                  <p className="text-label italic text-text-tertiary">
+                    &ldquo;{primaryMeaning.example}&rdquo;
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -239,17 +261,11 @@ function CloseIcon() {
   );
 }
 
-function SpeakerIcon() {
+function Spinner() {
   return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <path d="M2 6h2.5L8 3v10L4.5 10H2V6Z" />
-      <path
-        d="M10.5 5.5a3.5 3.5 0 0 1 0 5"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        fill="none"
-      />
+    <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.6" />
+      <path d="M14.5 8a6.5 6.5 0 0 0-6.5-6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }

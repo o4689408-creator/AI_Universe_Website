@@ -7,7 +7,7 @@ authorId: "founder"
 publishedAt: "2026-06-18"
 updatedAt: "2026-06-18"
 readTimeMinutes: 16
-heroImageUrl: "/images/topics/llms.svg"
+heroImageUrl: "https://images.unsplash.com/photo-1655635643617-72e0b62b9278?q=80&w=1600&auto=format&fit=crop"
 companionVideoId: "inside-large-language-models"
 trending: true
 sources:
@@ -43,23 +43,45 @@ A language model doesn't retrieve an answer — it computes, one token at a time
 Bigger models trained on more data reliably get better at a wide range of tasks — but not evenly, and not forever. Researchers have found fairly predictable relationships between model size, training data volume, and resulting performance, which is part of why compute budgets and data quality have become as strategically important as the architecture itself.
 
 <Figure
-  src="/images/topics/llms.svg"
-  alt="Layered diagram representing model depth and scale"
-  caption="Model capability tends to scale with parameters, data, and compute — up to a point."
+  src="https://images.unsplash.com/photo-1655635643617-72e0b62b9278?q=80&w=1400&auto=format&fit=crop"
+  alt="Abstract illustration visualising how neural networks perceive input and produce output"
+  caption="An artist's illustration of how AI systems perceive input and generate output, created by Rose Pilkington for Google DeepMind's Visualising AI project."
 />
 
 ## Why models sometimes get things confidently wrong
 
 A model generates the statistically most probable continuation of text — it has no built-in mechanism for checking whether that continuation is factually true. This is the root cause of what's commonly called "hallucination," and it's an active area of research rather than a solved problem.
 
+<DidYouKnow>
+
+"Hallucination" as an AI term predates modern LLMs — it was originally used in computer vision research to describe when a model generated plausible-looking but fabricated details in an image. The language-model usage borrowed the word because the failure mode is conceptually the same: confident, fluent, and wrong.
+
+</DidYouKnow>
+
 <VideoEmbed
   videoId="inside-large-language-models"
   caption="Watch the full breakdown on the AI Universe YouTube channel."
 />
 
+<Quiz
+  question="Why do large language models sometimes produce confident but false statements?"
+  correctIndex={1}
+  correctExplanation="A model predicts the statistically most likely next token — it has no separate mechanism that checks whether the result is factually true, which is exactly why fluent, confident output can still be wrong."
+  incorrectExplanation="It's that the model has no built-in fact-checking mechanism — it optimizes for statistically likely text, not verified truth."
+>
+  <QuizOption>They intentionally deceive</QuizOption>
+  <QuizOption>They have no built-in mechanism to verify factual truth</QuizOption>
+  <QuizOption>Their training data is always wrong</QuizOption>
+  <QuizOption>Bigger models hallucinate more</QuizOption>
+</Quiz>
+
 ## Key takeaways
+
+<KeyTakeaways>
 
 - Training teaches the model; inference is simply running what it already learned.
 - Text is generated one token at a time, each one conditioned on everything before it.
 - Scale reliably improves performance, but with diminishing and uneven returns.
 - Confident-sounding output is not the same as verified output.
+
+</KeyTakeaways>

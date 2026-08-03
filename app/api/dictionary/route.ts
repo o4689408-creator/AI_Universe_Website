@@ -44,7 +44,7 @@ async function fetchFromFreeDictionary(
 ): Promise<NormalizedEntry | null> {
   const response = await fetch(
     `https://api.dictionaryapi.dev/api/v2/entries/${encodeURIComponent(lang)}/${encodeURIComponent(word)}`,
-    { next: { revalidate: 60 * 60 * 24 } }
+    { next: { revalidate: 60 * 60 * 24 }, signal: AbortSignal.timeout(6000) }
   );
   if (!response.ok) return null;
 
@@ -94,6 +94,7 @@ async function fetchFromWordsApi(word: string): Promise<NormalizedEntry | null> 
         "X-RapidAPI-Host": "wordsapiv1.p.rapidapi.com",
       },
       next: { revalidate: 60 * 60 * 24 },
+      signal: AbortSignal.timeout(6000),
     }
   );
   if (!response.ok) return null;

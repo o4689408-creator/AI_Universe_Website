@@ -126,6 +126,13 @@ const config: Config = {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
+        shake: {
+          "0%, 100%": { transform: "translateX(0)" },
+          "20%": { transform: "translateX(-6px)" },
+          "40%": { transform: "translateX(5px)" },
+          "60%": { transform: "translateX(-4px)" },
+          "80%": { transform: "translateX(3px)" },
+        },
       },
       animation: {
         "fade-up": "fade-up 500ms var(--ease-out) forwards",
@@ -135,6 +142,8 @@ const config: Config = {
         "particle-pulse": "particle-pulse 4s var(--ease-in-out) infinite",
         "pop-in": "pop-in 500ms var(--ease-out) forwards",
         shimmer: "shimmer 1.8s ease-in-out infinite",
+        shake: "shake 450ms var(--ease-out)",
+        "shake-alt": "shake 450ms var(--ease-out)",
       },
     },
   },

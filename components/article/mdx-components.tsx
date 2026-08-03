@@ -17,6 +17,8 @@ import { StatsGrid, Stat } from "@/components/article/StatsGrid";
 import { Timeline, TimelineItem } from "@/components/article/Timeline";
 import { FAQSection, FAQItem } from "@/components/article/FAQSection";
 import { KeyTakeaways } from "@/components/article/KeyTakeaways";
+import { Quiz, QuizOption } from "@/components/article/Quiz";
+import { QuickSummary, DidYouKnow, ReaderChallenge, PredictionCard } from "@/components/article/EngagementBoxes";
 import { AnimatedReveal } from "@/components/ui/AnimatedReveal";
 
 function getText(node: ReactNode): string {
@@ -186,6 +188,12 @@ export const mdxComponents: MDXComponents = {
   FAQSection,
   FAQItem,
   KeyTakeaways,
+  Quiz,
+  QuizOption,
+  QuickSummary,
+  DidYouKnow,
+  ReaderChallenge,
+  PredictionCard,
   // Authors write <VideoEmbed videoId="..." /> in MDX — this resolves
   // the real youtubeId/title/thumbnail from the canonical registry
   // (lib/videos.ts) at compile time, so there's exactly one place a

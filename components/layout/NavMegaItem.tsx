@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { NavItem } from "@/components/layout/NavItem";
 import { MegaMenuPanel, type MegaMenuFeatured } from "@/components/layout/MegaMenuPanel";
@@ -32,12 +33,14 @@ export function NavMegaItem({
 }: NavMegaItemProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const isTouchDevice = useRef(false);
 
   useEffect(() => {
     isTouchDevice.current = window.matchMedia("(pointer: coarse)").matches;
+    setMounted(true);
   }, []);
 
   function openNow() {
@@ -103,36 +106,68 @@ export function NavMegaItem({
         {...(href ? { href } : { onClick: onClick ?? (() => undefined) })}
       />
 
+      {/*
+        Dimming scrim behind the panel — rendered via a portal straight
+        into document.body, NOT as a nested child here. This nav item
+        sits inside <header>, which has `backdrop-blur-md`; per the CSS
+        Filter Effects spec that makes <header> the containing block
+        for any `position: fixed` descendant (the same bug class fixed
+        in Header.tsx for MobileNav). A scrim nested in here would be
+        trapped inside the header's own ~64px box instead of covering
+        the page. Portaling it out sidesteps that entirely.
+
+        This also directly addresses two real complaints: a panel that
+        "covers the homepage content" with no visual acknowledgment
+        reads as a rendering glitch, not an intentional overlay; and a
+        panel whose own background is only a few RGB values different
+        from the page behind it (dark mode: #111114 panel on #0a0a0c
+        page) has almost no perceptible separation without one. Click
+        anywhere on the scrim closes the menu.
+      */}
+      {mounted &&
+        createPortal(
+          <div
+            aria-hidden="true"
+            onClick={closeNow}
+            className={cn(
+              "fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] transition-opacity duration-200 ease-out",
+              open ? "opacity-100" : "pointer-events-none opacity-0"
+            )}
+          />,
+          document.body
+        )}
+
+      {/* Gradient border: a 1px ring built from a gradient background
+          on this outer wrapper, showing through a 1px inset gap to the
+          solid inner panel — crisper and more "premium app" than a
+          flat single-color border. */}
       <div
         className={cn(
-          "absolute top-full z-40 mt-3 origin-top overflow-hidden rounded-2xl border border-border-subtle bg-bg-surface-1/90 shadow-[var(--shadow-lg),var(--shadow-glow-accent)] backdrop-blur-2xl ring-1 ring-white/[0.04] transition-all duration-slow ease-out",
+          "absolute top-full z-50 mt-3 origin-top rounded-[18px] bg-gradient-to-br from-accent/50 via-border to-accent/20 p-px transition-all ease-out",
           featured ? "w-[560px]" : "w-[340px]",
           align === "right" ? "right-0" : "left-0",
           open
-            ? "translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none -translate-y-2 scale-[0.96] opacity-0"
+            ? "translate-y-0 scale-100 opacity-100 duration-200"
+            : "pointer-events-none -translate-y-1.5 scale-[0.97] opacity-0 duration-150"
         )}
       >
-        {/* Soft animated accent glow along the top edge — the "animated border" premium detail. */}
-        <div
-          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-accent/70 to-transparent"
-          aria-hidden="true"
-        />
-        <div
-          className="pointer-events-none absolute -top-20 left-1/2 h-40 w-64 -translate-x-1/2 rounded-full bg-accent/[0.10] blur-3xl"
-          aria-hidden="true"
-        />
-        <MegaMenuPanel
-          columns={columns}
-          featured={featured}
-          align={align}
-          open={open}
-          onLinkClick={closeNow}
-          onSearchAction={() => {
-            closeNow();
-            onSearchAction?.();
-          }}
-        />
+        <div className="relative overflow-hidden rounded-[17px] bg-bg-surface-1/[0.98] shadow-[var(--shadow-lg),var(--shadow-glow-accent)] backdrop-blur-xl">
+          <div
+            className="pointer-events-none absolute -top-16 left-1/2 h-40 w-64 -translate-x-1/2 rounded-full bg-accent/[0.12] blur-3xl"
+            aria-hidden="true"
+          />
+          <MegaMenuPanel
+            columns={columns}
+            featured={featured}
+            align={align}
+            open={open}
+            onLinkClick={closeNow}
+            onSearchAction={() => {
+              closeNow();
+              onSearchAction?.();
+            }}
+          />
+        </div>
       </div>
     </div>
   );

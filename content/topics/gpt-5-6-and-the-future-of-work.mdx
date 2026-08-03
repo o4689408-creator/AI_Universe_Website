@@ -51,6 +51,12 @@ Earlier GPT releases were numbered straight through (5.4, 5.5). Starting with 5.
 
 The rollout itself made news for a reason that had nothing to do with capability: at the U.S. government's request, OpenAI initially limited access to a small group of trusted partners before expanding to a full public release<Cite index="3" />. OpenAI has been public about not wanting that kind of access review to become standard practice — but for a frontier lab, it's a notable first.
 
+<DidYouKnow>
+
+Sol, Terra, and Luna are named after light and celestial bodies — a small but deliberate shift from the plain-numbered "Thinking" and "Pro" tiers of GPT-5.4 and 5.5. It's the first time OpenAI has given individual model tiers standalone names rather than modifiers on a number.
+
+</DidYouKnow>
+
 ## The numbers behind the headlines
 
 <StatsGrid>
@@ -65,6 +71,20 @@ Every enterprise now is thinking about spend and the value they're getting in ex
 </PullQuote>
 
 That efficiency framing matters as much as the raw scores. Sol doesn't just score higher on benchmarks — OpenAI's own reporting emphasizes that it does more work per token and per dollar than its predecessor, which is the number that actually decides whether a company scales its AI usage up or pulls back<Cite index="1" />.
+
+<Quiz
+  index={1}
+  total={2}
+  question="Which GPT-5.6 tier is built for high-volume, latency-sensitive tasks?"
+  correctIndex={2}
+  correctExplanation="Luna is the fastest, cheapest tier — designed for chat and classification workloads where speed matters more than squeezing out the last percentage point of benchmark performance."
+  incorrectExplanation="Luna is the fastest and cheapest tier, purpose-built for exactly this kind of high-volume, latency-sensitive workload."
+>
+  <QuizOption>Sol</QuizOption>
+  <QuizOption>Terra</QuizOption>
+  <QuizOption>Luna</QuizOption>
+  <QuizOption>Ultra</QuizOption>
+</Quiz>
 
 ## Reasoning that goes deeper before it answers
 
@@ -147,6 +167,12 @@ For writers, designers, and marketers, the practical change is less "AI writes t
   </TimelineItem>
 </Timeline>
 
+<QuickSummary>
+
+So far: GPT-5.6 is three real, shipping models (Sol, Terra, Luna), meaningfully better at reasoning, coding, and cybersecurity than GPT-5.5, and already powering a new agent (ChatGPT Work) that completes whole tasks rather than just answering questions. Next up — what that actually means for jobs.
+
+</QuickSummary>
+
 ## The jobs most likely to change
 
 "Change" is a more accurate word here than "disappear." The clearest early pattern isn't that entire professions vanish — it's that the specific tasks within a job that involve routine synthesis, first-draft generation, or well-specified code get automated first, while the judgment-heavy parts of the same job become more valuable, not less.
@@ -178,6 +204,12 @@ Roles where the same models are becoming force multipliers rather than replaceme
 
 </KeyTakeaways>
 
+<ReaderChallenge>
+
+Pick one recurring task in your own job this week. Try writing a single, precise instruction for it — specific enough that someone with zero context could execute it correctly. That's the exact skill this entire article argues is becoming more valuable, not less.
+
+</ReaderChallenge>
+
 ## Future opportunities
 
 The same shift that displaces routine tasks creates real openings: demand for people who can build, audit, and govern AI systems is growing faster than the supply of people trained to do it. New roles are emerging around AI oversight (checking model output before it reaches customers), AI-augmented workflows (redesigning how a team's work actually happens once a model is in the loop), and AI safety and security specifically — a field OpenAI's own system card treats as a serious enough concern to warrant its most robust safeguards to date<Cite index="5" />.
@@ -200,6 +232,20 @@ The honest, balanced picture looks like this:
 - **Misuse potential is not hypothetical.** A model that's demonstrably better at finding software vulnerabilities is a dual-use tool by definition, which is precisely why OpenAI built layered safeguards specifically for cyber and biological risk categories rather than treating this as a generic capability release<Cite index="5" />.
 
 Different experts weigh these trade-offs differently — some argue the productivity gains justify moving fast even with residual risk, others argue the pace of capability growth is outrunning the pace of safety research. Both positions are represented among serious, informed people in this field, and it's worth reading more than one source before forming a firm view.
+
+<Quiz
+  index={2}
+  total={2}
+  question="Per OpenAI's own system card, could GPT-5.6 carry out a complete cyberattack fully on its own?"
+  correctIndex={1}
+  correctExplanation="OpenAI's testing found Sol could identify vulnerabilities and pieces of an exploit, but not carry out a complete, autonomous attack against a hardened target — a real but not absolute safety finding."
+  incorrectExplanation="OpenAI's system card reports it could identify vulnerabilities and exploit pieces, but not complete a full autonomous attack against a hardened target in their testing."
+>
+  <QuizOption>Yes, against any target</QuizOption>
+  <QuizOption>No — it could find vulnerabilities but not complete an attack on a hardened target</QuizOption>
+  <QuizOption>It refused to attempt it</QuizOption>
+  <QuizOption>It wasn&apos;t tested</QuizOption>
+</Quiz>
 
 ## Practical examples of GPT-5.6 in action today
 
@@ -284,6 +330,12 @@ Focus on the skills that stay valuable regardless of how capable models get: cle
 </FAQItem>
 
 </FAQSection>
+
+<PredictionCard>
+
+If the pace from GPT-5.4 → 5.5 → 5.6 holds, expect the next release to push further into autonomous, multi-hour agentic work rather than chasing single-question benchmark scores — the industry's attention is visibly shifting from "can it answer this" to "can it finish this project unsupervised." Whether safety research keeps pace with that shift is the open question worth watching.
+
+</PredictionCard>
 
 ## Conclusion
 

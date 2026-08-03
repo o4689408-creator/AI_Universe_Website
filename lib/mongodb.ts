@@ -15,6 +15,13 @@ import { MongoClient, type Db } from "mongodb";
  * start creates one client that's reused for the lifetime of that
  * function instance — the standard pattern recommended by both Vercel
  * and MongoDB for serverless deployments.
+ *
+ * Connection options are tuned for "one small serverless function
+ * talking to Atlas," not a long-running server with many concurrent
+ * users: a small pool avoids the overhead of provisioning connections
+ * that will mostly sit idle, and short timeouts mean a genuinely
+ * unreachable cluster fails fast (a few seconds) instead of a request
+ * hanging for the driver's much longer default.
  */
 
 const uri = process.env.MONGODB_URI;
@@ -36,7 +43,12 @@ function createClientPromise(): Promise<MongoClient> {
     );
   }
 
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri, {
+    maxPoolSize: 5,
+    minPoolSize: 0,
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
   return client.connect();
 }
 
@@ -45,12 +57,25 @@ export function getMongoClient(): Promise<MongoClient> {
   if (process.env.NODE_ENV === "development") {
     if (!global._mongoClientPromise) {
       global._mongoClientPromise = createClientPromise();
+      // If the very first connection attempt fails (a transient
+      // network blip, Atlas cluster paused, etc.), the cached promise
+      // would otherwise stay rejected for as long as this dev process
+      // runs — every request would fail immediately without ever
+      // retrying. Clearing the cache on rejection means the next
+      // request gets a fresh connection attempt instead of a
+      // permanently poisoned one.
+      global._mongoClientPromise.catch(() => {
+        global._mongoClientPromise = undefined;
+      });
     }
     return global._mongoClientPromise;
   }
 
   if (!cachedClientPromise) {
     cachedClientPromise = createClientPromise();
+    cachedClientPromise.catch(() => {
+      cachedClientPromise = null;
+    });
   }
   return cachedClientPromise;
 }

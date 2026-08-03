@@ -7,7 +7,7 @@ authorId: "founder"
 publishedAt: "2026-06-02"
 updatedAt: "2026-06-02"
 readTimeMinutes: 14
-heroImageUrl: "/images/topics/transformers.svg"
+heroImageUrl: "https://images.unsplash.com/photo-1664448007527-2c49742dbb24?q=80&w=1600&auto=format&fit=crop"
 companionVideoId: "how-transformers-actually-work"
 sources:
   - label: "Attention Is All You Need (Vaswani et al., 2017)"
@@ -40,9 +40,9 @@ Each word is projected into three vectors: a query (what am I looking for?), a k
 </Callout>
 
 <Figure
-  src="/images/topics/transformers.svg"
-  alt="Diagram of attention connections between tokens in a sentence"
-  caption="A simplified view of self-attention: every token attends to every other token."
+  src="https://images.unsplash.com/photo-1664448007527-2c49742dbb24?q=80&w=1400&auto=format&fit=crop"
+  alt="Abstract artistic illustration representing how AI models connect and weigh pieces of information"
+  caption="An artist's illustration of how AI systems relate pieces of information to each other, created by Rose Pilkington for Google DeepMind's Visualising AI project — the same principle self-attention applies to tokens in a sentence."
 />
 
 ## Stacking layers, building understanding
@@ -58,9 +58,31 @@ A single attention layer captures simple relationships. Real models stack dozens
 
 Transformers scaled better than anything that came before them, largely because their core computation — matrix multiplication across an entire sequence at once — maps extremely well onto GPU hardware. That combination of architectural elegance and hardware fit is arguably the single biggest reason today's AI progress moved as fast as it did.
 
+<DidYouKnow>
+
+The original transformer paper, "Attention Is All You Need," was published in 2017 by a team of eight researchers at Google. Several of its authors went on to found or join other major AI labs — the architecture's influence on the field extends well beyond the paper itself.
+
+</DidYouKnow>
+
+<Quiz
+  question="What lets a transformer process an entire sentence at once instead of word by word?"
+  correctIndex={1}
+  correctExplanation="Self-attention lets every word look at every other word simultaneously and weigh their relevance — the core mechanism that replaced step-by-step sequence processing."
+  incorrectExplanation="It's self-attention — the mechanism that lets a model weigh every word against every other word at once, rather than processing the sequence step by step."
+>
+  <QuizOption>Larger vocabularies</QuizOption>
+  <QuizOption>Self-attention</QuizOption>
+  <QuizOption>Faster GPUs alone</QuizOption>
+  <QuizOption>More training data</QuizOption>
+</Quiz>
+
 ## Key takeaways
+
+<KeyTakeaways>
 
 - Self-attention lets a model weigh the relevance of every word to every other word, all at once.
 - Multi-head attention tracks several types of relationships in parallel.
 - Stacked layers build from concrete syntax toward abstract meaning.
 - The architecture's fit with GPU hardware is a major reason it scaled so well.
+
+</KeyTakeaways>

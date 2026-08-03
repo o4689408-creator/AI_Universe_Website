@@ -48,8 +48,8 @@ export function MegaMenuPanel({
         className={cn(
           "flex flex-col gap-5 transition-all ease-out",
           open
-            ? "translate-y-0 opacity-100 duration-500 [transition-delay:60ms]"
-            : "translate-y-1.5 opacity-0 duration-150"
+            ? "translate-y-0 opacity-100 duration-300 [transition-delay:40ms]"
+            : "translate-y-1 opacity-0 duration-100"
         )}
       >
         {columns.map((column) => (
@@ -79,8 +79,8 @@ export function MegaMenuPanel({
           className={cn(
             "relative transition-all ease-out",
             open
-              ? "translate-x-0 opacity-100 duration-500 [transition-delay:140ms]"
-              : "translate-x-2 opacity-0 duration-150"
+              ? "translate-x-0 opacity-100 duration-300 [transition-delay:90ms]"
+              : "translate-x-1.5 opacity-0 duration-100"
           )}
         >
           {/* Vertical divider — the "clear visual separation" between
@@ -148,7 +148,7 @@ function MegaMenuLinkItem({
         className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 origin-center scale-y-0 rounded-full bg-accent transition-transform duration-base ease-out group-hover/link:scale-y-100"
         aria-hidden="true"
       />
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border-subtle bg-gradient-to-b from-bg-surface-2 to-bg-surface-1 text-text-secondary transition-all duration-base ease-out group-hover/link:scale-110 group-hover/link:border-accent/30 group-hover/link:from-accent-muted group-hover/link:to-accent-muted group-hover/link:text-accent group-hover/link:shadow-glow-accent">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-gradient-to-b from-bg-surface-2 to-bg-surface-1 text-text-secondary transition-all duration-base ease-out group-hover/link:scale-110 group-hover/link:border-accent/40 group-hover/link:from-accent-muted group-hover/link:to-accent-muted group-hover/link:text-accent group-hover/link:shadow-glow-accent [&_svg]:h-5 [&_svg]:w-5">
         {link.icon}
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">

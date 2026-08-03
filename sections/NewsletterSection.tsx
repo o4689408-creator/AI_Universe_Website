@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
 import { AnimatedReveal } from "@/components/ui/AnimatedReveal";
+import { ConfettiBurst } from "@/components/ui/ConfettiBurst";
 import { cn } from "@/lib/utils";
 import { useRipple } from "@/lib/hooks/useRipple";
 
@@ -29,7 +30,6 @@ const welcomeBenefits = [
   { icon: "💡", label: "Weekly knowledge updates" },
 ];
 
-const CONFETTI_COLORS = ["#4C7DFF", "#7DA2FF", "#FFC24C", "#4CE0B3", "#FF6B9D"];
 
 /**
  * Purpose: convert one-time visitors into a retainable audience — the
@@ -48,21 +48,12 @@ export function NewsletterSection() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  // Alternates between two identical shake animations on each new
+  // error so the CSS animation restarts every time (a repeated class
+  // name wouldn't replay) — without remounting the form, which would
+  // otherwise reset the input's focus and cursor position mid-typing.
+  const [shakeVariant, setShakeVariant] = useState<0 | 1>(0);
   const handleRipple = useRipple();
-
-  // Generated once so the burst doesn't reshuffle on re-renders.
-  const confettiPieces = useMemo(
-    () =>
-      Array.from({ length: 18 }, (_, index) => ({
-        id: index,
-        angle: (360 / 18) * index + (Math.random() * 12 - 6),
-        distance: 60 + Math.random() * 40,
-        color: CONFETTI_COLORS[index % CONFETTI_COLORS.length] ?? CONFETTI_COLORS[0]!,
-        delay: Math.random() * 120,
-        size: 5 + Math.random() * 4,
-      })),
-    []
-  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,6 +62,7 @@ export function NewsletterSection() {
     if (!isValidEmail(email)) {
       setError("Enter a valid email address.");
       setStatus("error");
+      setShakeVariant((v) => (v === 0 ? 1 : 0));
       return;
     }
 
@@ -86,12 +78,14 @@ export function NewsletterSection() {
       if (!response.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
         setStatus("error");
+        setShakeVariant((v) => (v === 0 ? 1 : 0));
         return;
       }
       setStatus("success");
     } catch {
       setError("Something went wrong. Please check your connection and try again.");
       setStatus("error");
+      setShakeVariant((v) => (v === 0 ? 1 : 0));
     }
   }
 
@@ -119,7 +113,7 @@ export function NewsletterSection() {
 
             <div className="relative flex flex-col items-center gap-6 text-center">
               {status === "success" ? (
-                <SuccessState confettiPieces={confettiPieces} />
+                <SuccessState />
               ) : (
                 <>
                   <span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent/30 bg-accent-muted text-2xl">
@@ -148,7 +142,10 @@ export function NewsletterSection() {
                   <form
                     onSubmit={handleSubmit}
                     noValidate
-                    className="mt-1 flex w-full max-w-lg flex-col gap-3 sm:flex-row sm:gap-2.5"
+                    className={cn(
+                      "mt-1 flex w-full max-w-lg flex-col gap-3 sm:flex-row sm:gap-2.5",
+                      status === "error" && (shakeVariant === 0 ? "animate-shake" : "animate-shake-alt")
+                    )}
                   >
                     <label htmlFor="newsletter-email" className="sr-only">
                       Email address
@@ -163,7 +160,12 @@ export function NewsletterSection() {
                       disabled={status === "submitting"}
                       aria-invalid={status === "error"}
                       aria-describedby={status === "error" ? "newsletter-error" : undefined}
-                      className="min-h-[52px] flex-1 rounded-full border border-border bg-bg-base px-5 text-body text-text-primary placeholder:text-text-tertiary focus:border-accent focus:shadow-glow-accent focus:outline-none disabled:opacity-60"
+                      className={cn(
+                        "min-h-[52px] flex-1 rounded-full border bg-bg-base px-5 text-body text-text-primary placeholder:text-text-tertiary focus:shadow-glow-accent focus:outline-none disabled:opacity-60",
+                        status === "error"
+                          ? "border-error focus:border-error"
+                          : "border-border focus:border-accent"
+                      )}
                     />
                     <button
                       type="submit"
@@ -192,7 +194,12 @@ export function NewsletterSection() {
                   </p>
 
                   {status === "error" && error && (
-                    <p id="newsletter-error" role="alert" className="text-body-sm text-error">
+                    <p
+                      id="newsletter-error"
+                      role="alert"
+                      className="flex items-center gap-1.5 text-body-sm text-error animate-fade-up"
+                    >
+                      <ErrorIcon />
                       {error}
                     </p>
                   )}
@@ -206,31 +213,11 @@ export function NewsletterSection() {
   );
 }
 
-function SuccessState({
-  confettiPieces,
-}: {
-  confettiPieces: { id: number; angle: number; distance: number; color: string; delay: number; size: number }[];
-}) {
+function SuccessState() {
   return (
     <div className="relative flex flex-col items-center gap-4 py-2">
       <div className="relative flex h-20 w-20 items-center justify-center">
-        {/* Confetti burst — lightweight, pure CSS, generated once. */}
-        {confettiPieces.map((piece) => (
-          <span
-            key={piece.id}
-            className="absolute left-1/2 top-1/2 rounded-full opacity-0 animate-pop-in"
-            style={{
-              width: piece.size,
-              height: piece.size,
-              backgroundColor: piece.color,
-              animationDelay: `${piece.delay}ms`,
-              animationDuration: "900ms",
-              animationFillMode: "forwards",
-              transform: `rotate(${piece.angle}deg) translate(${piece.distance}px) rotate(-${piece.angle}deg)`,
-            }}
-            aria-hidden="true"
-          />
-        ))}
+        <ConfettiBurst />
         <span className="relative flex h-20 w-20 animate-pop-in items-center justify-center rounded-full bg-accent-muted text-accent shadow-glow-accent">
           <CheckIcon />
         </span>
@@ -309,6 +296,16 @@ function FloatingParticles() {
         />
       ))}
     </div>
+  );
+}
+
+function ErrorIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" className="shrink-0">
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M8 5v3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="8" cy="11" r="0.8" fill="currentColor" />
+    </svg>
   );
 }
 
