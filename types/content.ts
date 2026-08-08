@@ -60,6 +60,8 @@ export interface TopicMeta {
   companionVideoId?: string;
   /** Editorial flag for the homepage/Topics "Trending" section — set manually in frontmatter until real analytics is connected. */
   trending?: boolean;
+  /** Editorial flag for the homepage "Featured" spot — set manually (MDX frontmatter today, the Admin CMS's Featured toggle for CMS articles). `getFeaturedTopics()` in lib/content.ts prefers these before falling back to recency. */
+  featured?: boolean;
   sources: SourceLink[];
   relatedSlugs: string[];
   /**
@@ -68,6 +70,34 @@ export interface TopicMeta {
    * against the actual content of the piece — never rendered directly.
    */
   contentText: string;
+  /**
+   * A fully-resolved companion video, set only for CMS-authored
+   * articles (lib/admin/articles.ts builds this directly from the
+   * article's pasted YouTube URL). When present, callers should prefer
+   * this over resolving `companionVideoId` through the static
+   * lib/videos.ts registry — see app/topics/[slug]/page.tsx and
+   * components/discovery/RecommendationResults.tsx for the fallback
+   * pattern (`topic.companionVideo ?? (topic.companionVideoId ? getVideoById(...) : undefined)`).
+   * MDX-authored articles never set this and keep using the registry
+   * exactly as before.
+   */
+  companionVideo?: Video;
+  /** Which system authored this piece — lets the Admin CMS list only editable (CMS-sourced) articles and lets lib/content.ts merge both sources. Never rendered to visitors. */
+  source: "mdx" | "cms";
+  /**
+   * Optional SEO/social overrides, set only by the Admin CMS's SEO
+   * panel — MDX articles never set these and lib/seo.ts#buildArticleMetadata
+   * falls back to the equivalent editorial field (title/subtitle/
+   * heroImageUrl/canonical topic URL) for every one of them, so this
+   * is purely additive and changes nothing for existing articles.
+   */
+  seoTitle?: string;
+  metaDescription?: string;
+  canonicalUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImageUrl?: string;
+  twitterImageUrl?: string;
 }
 
 /**

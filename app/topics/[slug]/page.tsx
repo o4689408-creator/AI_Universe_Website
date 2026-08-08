@@ -27,6 +27,14 @@ interface ArticlePageProps {
   params: { slug: string };
 }
 
+// Safety-net ISR: lib/admin/revalidate.ts already triggers an
+// immediate, precise on-demand revalidation of this exact path the
+// moment an article is created/edited/published from the Admin CMS,
+// but a time-based fallback means a missed/failed revalidation call
+// (a transient error, a direct DB edit) still self-heals within an
+// hour rather than staying stale until the next full deploy.
+export const revalidate = 3600;
+
 export async function generateStaticParams() {
   const topics = await getAllTopics();
   return topics.map((topic) => ({ slug: topic.slug }));
@@ -49,9 +57,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     getAdjacentTopics(topic.slug),
   ]);
 
-  const companionVideo = topic.companionVideoId
-    ? getVideoById(topic.companionVideoId)
-    : undefined;
+  // CMS-authored articles resolve their companion video directly from
+  // the pasted YouTube URL (topic.companionVideo — see
+  // lib/admin/articles.ts#buildCompanionVideo); MDX-authored articles
+  // keep resolving through the curated lib/videos.ts registry exactly
+  // as before.
+  const companionVideo =
+    topic.companionVideo ?? (topic.companionVideoId ? getVideoById(topic.companionVideoId) : undefined);
 
   const url = absoluteUrl(`/topics/${topic.slug}`);
   const articleJsonLd = buildArticleJsonLd(topic, companionVideo);

@@ -17,6 +17,11 @@ export const metadata: Metadata = buildPageMetadata({
   path: "/",
 });
 
+// Safety-net ISR (see the matching comment in app/topics/[slug]/page.tsx)
+// — the Admin CMS already triggers an immediate revalidatePath("/") on
+// every publish/unpublish/delete, this is just the time-based fallback.
+export const revalidate = 3600;
+
 export default async function HomePage() {
   const topics = await getAllTopics();
   const videos = await getAllVideos();

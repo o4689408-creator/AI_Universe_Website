@@ -10,9 +10,27 @@ import { SITE_NAME } from "@/lib/config";
  */
 export function Logo() {
   return (
+    /*
+     * Deliberately shrinkable (no `shrink-0` here) — this is the ONLY
+     * flexible child in the header's top row; the icon cluster on the
+     * right (ThemeToggle + hamburger) is `shrink-0` and must never
+     * compress or move off-canvas. Giving the logo `min-w-0` plus a
+     * `truncate` on its text span means the flex algorithm shrinks
+     * THIS element first, down to its icon-only floor, before the row
+     * can ever overflow the viewport. Without this, both ends of the
+     * row were `shrink-0` and the row had zero slack — a fine margin
+     * on a 320-390px phone at 100% OS font scale, but one Android
+     * "larger text" setting, or a webfont-swap width jump, away from
+     * silently clipping the hamburger button off the edge of the
+     * screen (globals.css uses `overflow-x: clip`, not `hidden`, so an
+     * overflow like that produces no scrollbar and no console error —
+     * it just vanishes). Making the logo the sole flexible element
+     * makes that entire class of bug structurally impossible rather
+     * than dependent on exact text-width math.
+     */
     <Link
       href="/"
-      className="group flex min-w-0 shrink-0 items-center gap-2 sm:gap-2.5"
+      className="group flex min-w-0 items-center gap-2 sm:gap-2.5"
     >
       <span className="relative flex h-9 w-9 shrink-0 items-center justify-center [perspective:400px]">
         <span
@@ -54,7 +72,7 @@ export function Logo() {
           </g>
         </svg>
       </span>
-      <span className="truncate bg-gradient-to-r from-text-primary to-text-primary bg-clip-text text-body-lg font-semibold tracking-tight text-transparent transition-all duration-slow ease-out group-hover:from-accent group-hover:to-accent-hover sm:text-heading-4">
+      <span className="min-w-0 truncate bg-gradient-to-r from-text-primary to-text-primary bg-clip-text text-body font-semibold tracking-tight text-transparent transition-all duration-slow ease-out group-hover:from-accent group-hover:to-accent-hover sm:text-heading-4">
         {SITE_NAME}
       </span>
     </Link>

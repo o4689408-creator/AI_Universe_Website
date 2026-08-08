@@ -17,7 +17,14 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} https://plausible.io`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://i.ytimg.com https://images.unsplash.com",
+  // Widened from a fixed allow-list to any HTTPS host: the Admin CMS
+  // lets the operator paste an arbitrary Hero/Featured Image URL for
+  // every new article, so the previous two-domain allow-list would
+  // have silently blocked most pasted images from ever rendering.
+  // Every other directive below stays exactly as strict as before —
+  // this only widens where *images* may load from, not scripts,
+  // frames, or connections.
+  "img-src 'self' data: https:",
   "font-src 'self'",
   `connect-src 'self' https://plausible.io ${isDev ? "ws://localhost:* http://localhost:*" : ""}`,
   "frame-src https://www.youtube.com",
@@ -46,17 +53,19 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    // YouTube thumbnails + Unsplash (royalty-free article imagery) are
-    // the external image sources for v1. Add new hosts deliberately,
-    // not with a wildcard.
+    // Any HTTPS host is allowed here on purpose (not the previous
+    // fixed two-domain list): the Admin CMS accepts a pasted image URL
+    // for every article's Hero/Featured Image, from whatever host the
+    // operator happens to be linking to, and next/image refuses to
+    // optimize any host not listed here. The CSP img-src directive
+    // above was widened to match. If a tighter allow-list is ever
+    // wanted again (e.g. once articles are only ever illustrated from
+    // a known image host or your own storage), narrow both back down
+    // together.
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "i.ytimg.com",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "**",
       },
     ],
   },

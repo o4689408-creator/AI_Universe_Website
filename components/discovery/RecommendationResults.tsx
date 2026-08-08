@@ -38,7 +38,8 @@ export function RecommendationResults({ results, hasSelection }: RecommendationR
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {results.map(({ topic, matchedInterests }) => {
-        const video = topic.companionVideoId ? getVideoById(topic.companionVideoId) : undefined;
+        const video =
+          topic.companionVideo ?? (topic.companionVideoId ? getVideoById(topic.companionVideoId) : undefined);
         return (
           <div key={topic.slug} className="flex flex-col gap-2">
             <ContentCard

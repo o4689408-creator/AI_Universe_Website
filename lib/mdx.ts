@@ -3,9 +3,9 @@ import path from "node:path";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { getAuthor } from "@/lib/authors";
-import { slugify } from "@/lib/slugify";
+import { extractHeadings } from "@/lib/heading-utils";
 import { mdxComponents } from "@/components/article/mdx-components";
-import type { SourceLink, TocHeading, Topic, TopicMeta } from "@/types/content";
+import type { SourceLink, Topic, TopicMeta } from "@/types/content";
 
 const TOPICS_DIR = path.join(process.cwd(), "content", "topics");
 
@@ -55,21 +55,6 @@ function extractSearchableText(body: string): string {
   return plain.slice(0, 4000);
 }
 
-function extractHeadings(body: string): TocHeading[] {
-  const headingPattern = /^(#{2,3})\s+(.+)$/gm;
-  const headings: TocHeading[] = [];
-  let match: RegExpExecArray | null;
-
-  while ((match = headingPattern.exec(body)) !== null) {
-    const level = (match[1]?.length ?? 2) as 2 | 3;
-    const text = match[2]?.trim() ?? "";
-    if (!text) continue;
-    headings.push({ id: slugify(text), text, level });
-  }
-
-  return headings;
-}
-
 export function listTopicSlugs(): string[] {
   if (!fs.existsSync(TOPICS_DIR)) return [];
   return fs
@@ -108,6 +93,7 @@ export async function readTopicMeta(slug: string): Promise<TopicMeta | null> {
       sources: frontmatter.sources ?? [],
       relatedSlugs: frontmatter.relatedSlugs ?? [],
       contentText: extractSearchableText(body),
+      source: "mdx",
     };
   } catch {
     return null;
@@ -146,6 +132,7 @@ export async function readTopic(slug: string): Promise<Topic | null> {
       sources: frontmatter.sources ?? [],
       relatedSlugs: frontmatter.relatedSlugs ?? [],
       contentText: extractSearchableText(body),
+      source: "mdx",
       content,
       headings: extractHeadings(body),
     };

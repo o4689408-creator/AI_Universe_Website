@@ -51,26 +51,44 @@ export function buildPageMetadata({
   };
 }
 
-/** Standard template for article (Topic) pages. */
+/**
+ * Standard template for article (Topic) pages. Every field an editor
+ * can override from the Admin CMS's SEO panel (types/content.ts) is
+ * optional and falls back to the equivalent editorial field — MDX
+ * articles, which never set any of these, get exactly the same
+ * metadata they always did.
+ */
 export function buildArticleMetadata(topic: Topic): Metadata {
-  const url = absoluteUrl(`/topics/${topic.slug}`);
+  const canonicalUrl = topic.canonicalUrl?.trim() || absoluteUrl(`/topics/${topic.slug}`);
+  const title = topic.seoTitle?.trim() || topic.title;
+  const description = topic.metaDescription?.trim() || topic.subtitle;
+  const ogTitle = topic.ogTitle?.trim() || title;
+  const ogDescription = topic.ogDescription?.trim() || description;
+  const ogImageUrl = topic.ogImageUrl?.trim();
+  const twitterImageUrl = topic.twitterImageUrl?.trim() || ogImageUrl;
 
   return {
-    title: topic.title,
-    description: topic.subtitle,
-    alternates: { canonical: url },
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       type: "article",
-      title: topic.title,
-      description: topic.subtitle,
-      url,
+      title: ogTitle,
+      description: ogDescription,
+      url: canonicalUrl,
       publishedTime: topic.publishedAt,
       modifiedTime: topic.updatedAt,
+      // Omitting `images` here (rather than setting it to the dynamic
+      // /opengraph-image route explicitly) lets Next.js fall back to
+      // that file-convention route automatically when no override is
+      // set — exactly today's behavior for every existing article.
+      ...(ogImageUrl && { images: [{ url: ogImageUrl }] }),
     },
     twitter: {
       card: "summary_large_image",
-      title: topic.title,
-      description: topic.subtitle,
+      title: ogTitle,
+      description: ogDescription,
+      ...(twitterImageUrl && { images: [twitterImageUrl] }),
     },
   };
 }
