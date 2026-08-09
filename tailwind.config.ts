@@ -133,6 +133,14 @@ const config: Config = {
           "60%": { transform: "translateX(-4px)" },
           "80%": { transform: "translateX(3px)" },
         },
+        "scale-in": {
+          "0%": { opacity: "0", transform: "scale(0.94)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "glow-in": {
+          "0%": { opacity: "0", boxShadow: "0 0 0 rgba(76,125,255,0)" },
+          "100%": { opacity: "1", boxShadow: "var(--shadow-glow-accent)" },
+        },
       },
       animation: {
         "fade-up": "fade-up 500ms var(--ease-out) forwards",
@@ -144,6 +152,8 @@ const config: Config = {
         shimmer: "shimmer 1.8s ease-in-out infinite",
         shake: "shake 450ms var(--ease-out)",
         "shake-alt": "shake 450ms var(--ease-out)",
+        "scale-in": "scale-in 350ms var(--ease-out) forwards",
+        "glow-in": "glow-in 600ms var(--ease-out) forwards",
       },
     },
   },

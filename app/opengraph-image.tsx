@@ -1,9 +1,17 @@
 import { ImageResponse } from "next/og";
+import { getOgFontData, OG_FONT_FAMILY } from "@/lib/og-font";
+import { sanitizeOgText } from "@/lib/og-text";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OpengraphImage() {
+// See lib/og-font.ts for why this route explicitly supplies a font
+// instead of relying on ImageResponse's own default-font resolution —
+// that's what was throwing "TypeError: Invalid URL" during
+// prerendering.
+export default async function OpengraphImage() {
+  const fontData = await getOgFontData();
+
   return new ImageResponse(
     (
       <div
@@ -17,6 +25,7 @@ export default function OpengraphImage() {
           backgroundImage:
             "radial-gradient(circle at 30% 30%, #18181c 0%, #0A0A0C 70%)",
           padding: "80px",
+          fontFamily: OG_FONT_FAMILY,
         }}
       >
         <div
@@ -27,10 +36,10 @@ export default function OpengraphImage() {
             letterSpacing: "-0.02em",
           }}
         >
-          AI Universe
+          {sanitizeOgText("AI Universe")}
         </div>
         <div style={{ fontSize: 28, color: "#A8A8AE", marginTop: 20 }}>
-          Understand artificial intelligence, deeply.
+          {sanitizeOgText("Understand artificial intelligence, deeply.")}
         </div>
         <div
           style={{
@@ -54,6 +63,9 @@ export default function OpengraphImage() {
         </div>
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      fonts: [{ name: OG_FONT_FAMILY, data: fontData, weight: 700, style: "normal" }],
+    }
   );
 }

@@ -31,7 +31,13 @@ export function MediaFigure({
             className="relative w-full overflow-hidden rounded-lg bg-bg-surface-1"
             style={{ aspectRatio }}
           >
-            <Image src={src} alt={alt} fill className="object-cover transition-transform duration-slow ease-out group-hover:scale-[1.03]" />
+            <Image
+              src={src}
+              alt={alt}
+              fill
+              sizes="(min-width: 1100px) 1100px, 100vw"
+              className="object-cover transition-transform duration-slow ease-out group-hover:scale-[1.03]"
+            />
           </div>
         </ImageLightbox>
         {caption && (

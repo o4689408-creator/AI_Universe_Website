@@ -158,7 +158,14 @@ export const mdxComponents: MDXComponents = {
   img: ({ src, alt }) =>
     typeof src === "string" ? (
       <span className="relative my-6 block aspect-video w-full overflow-hidden rounded-lg bg-bg-surface-1">
-        <Image src={src} alt={alt ?? ""} fill className="object-cover" />
+        <Image
+          src={src}
+          alt={alt ?? ""}
+          fill
+          sizes="(min-width: 1100px) 1100px, 100vw"
+          loading="lazy"
+          className="object-cover"
+        />
       </span>
     ) : null,
 

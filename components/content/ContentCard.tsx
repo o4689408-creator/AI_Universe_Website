@@ -119,7 +119,7 @@ export function ContentCard({
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       className={cn(
-        "group relative overflow-hidden rounded-lg border border-border-subtle bg-bg-surface-1 transition-[transform,border-color] duration-base ease-out will-change-transform hover:border-border",
+        "group relative overflow-hidden rounded-lg border border-border-subtle bg-bg-surface-1 transition-[transform,border-color,box-shadow] duration-base ease-out will-change-transform hover:border-accent/30 hover:shadow-glow-accent",
         featured && "rounded-xl md:grid md:grid-cols-2 md:items-center",
         className
       )}
@@ -148,6 +148,19 @@ export function ContentCard({
           sizes={featured ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 768px) 33vw, 100vw"}
           className="object-cover transition-transform duration-slow ease-out group-hover:scale-[1.03]"
         />
+        {/* Bottom-up gradient — adds depth to the image itself and is
+            what the reading-time pill sits on for guaranteed contrast
+            regardless of the underlying photo's own colors. */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-black/0"
+          aria-hidden="true"
+        />
+        {meta && (
+          <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 text-label font-medium text-white backdrop-blur-sm">
+            <ClockIcon className="h-3 w-3" />
+            {meta}
+          </span>
+        )}
       </div>
 
       <div className={cn("flex flex-col gap-2 p-5", featured && "md:p-8")}>
@@ -156,7 +169,7 @@ export function ContentCard({
         )}
         <h3
           className={cn(
-            "font-semibold text-text-primary",
+            "font-semibold text-text-primary transition-colors duration-fast ease-out group-hover:text-accent",
             featured ? "text-heading-2-mobile md:text-heading-2" : "text-heading-4"
           )}
         >
@@ -165,8 +178,28 @@ export function ContentCard({
         {description && (
           <p className="text-body-sm text-text-secondary">{description}</p>
         )}
-        {meta && <span className="mt-1 text-body-sm text-text-tertiary">{meta}</span>}
+        <span className="mt-1 flex items-center gap-1 text-body-sm font-medium text-accent opacity-0 transition-all duration-base ease-out group-hover:translate-x-1 group-hover:opacity-100">
+          Read article
+          <ArrowIcon className="h-3 w-3" />
+        </span>
       </div>
     </div>
+  );
+}
+
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className={className} aria-hidden="true">
+      <circle cx="8" cy="8" r="6.25" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M8 4.5V8l2.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ArrowIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 12 12" fill="none" className={className} aria-hidden="true">
+      <path d="M2.5 6H9.5M9.5 6L6.5 3M9.5 6L6.5 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
