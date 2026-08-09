@@ -429,49 +429,61 @@ export async function listArticlesForAdmin(filters: ArticleListFilters = {}): Pr
     return { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 };
   }
 
-  const collection = await getArticlesCollection();
   const page = Math.max(1, filters.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, filters.pageSize ?? 20));
 
-  const conditions: Record<string, unknown>[] = [];
-  if (filters.status) conditions.push({ status: filters.status });
-  if (filters.category) conditions.push({ category: filters.category });
-  if (filters.tag) conditions.push({ tags: filters.tag });
-  if (filters.featured !== undefined) conditions.push({ featured: filters.featured });
-  if (filters.trending !== undefined) conditions.push({ trending: filters.trending });
-  if (filters.query?.trim()) conditions.push({ $text: { $search: filters.query.trim() } });
+  try {
+    const collection = await getArticlesCollection();
 
-  const query = conditions.length > 0 ? { $and: conditions } : {};
+    const conditions: Record<string, unknown>[] = [];
+    if (filters.status) conditions.push({ status: filters.status });
+    if (filters.category) conditions.push({ category: filters.category });
+    if (filters.tag) conditions.push({ tags: filters.tag });
+    if (filters.featured !== undefined) conditions.push({ featured: filters.featured });
+    if (filters.trending !== undefined) conditions.push({ trending: filters.trending });
+    if (filters.query?.trim()) conditions.push({ $text: { $search: filters.query.trim() } });
 
-  const [docs, total] = await Promise.all([
-    collection
-      .find(query)
-      .sort({ updatedAt: -1 })
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .toArray(),
-    collection.countDocuments(query),
-  ]);
+    const query = conditions.length > 0 ? { $and: conditions } : {};
 
-  return {
-    items: docs.map((doc) => ({
-      id: doc._id.toString(),
-      title: doc.title,
-      slug: doc.slug,
-      category: doc.category,
-      tags: doc.tags,
-      status: doc.status,
-      featured: doc.featured,
-      trending: doc.trending,
-      scheduledFor: doc.scheduledFor,
-      publishedAt: doc.publishedAt,
-      updatedAt: doc.updatedAt,
-    })),
-    total,
-    page,
-    pageSize,
-    totalPages: Math.max(1, Math.ceil(total / pageSize)),
-  };
+    const [docs, total] = await Promise.all([
+      collection
+        .find(query)
+        .sort({ updatedAt: -1 })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .toArray(),
+      collection.countDocuments(query),
+    ]);
+
+    return {
+      items: docs.map((doc) => ({
+        id: doc._id.toString(),
+        title: doc.title,
+        slug: doc.slug,
+        category: doc.category,
+        tags: doc.tags,
+        status: doc.status,
+        featured: doc.featured,
+        trending: doc.trending,
+        scheduledFor: doc.scheduledFor,
+        publishedAt: doc.publishedAt,
+        updatedAt: doc.updatedAt,
+      })),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    };
+  } catch (error) {
+    // Same reasoning as getPublishedArticlesAsTopicMetas above — a
+    // genuinely unreachable MongoDB shouldn't hard-crash the Admin
+    // articles list (and, same as lib/admin/categories.ts, this is
+    // also what lets Next's build correctly recognize this route needs
+    // dynamic rendering rather than failing outright while attempting
+    // static optimization).
+    console.error("[lib/admin/articles] MongoDB unreachable while listing articles:", error);
+    return { items: [], total: 0, page, pageSize, totalPages: 0 };
+  }
 }
 
 /** Real dashboard counts — every number here comes directly from a MongoDB query, never fabricated. */
@@ -484,20 +496,25 @@ export async function getArticleStats(): Promise<{
   featured: number;
   trending: number;
 }> {
-  if (!isMongoConfigured()) {
-    return { total: 0, published: 0, draft: 0, ready: 0, scheduled: 0, featured: 0, trending: 0 };
+  const empty = { total: 0, published: 0, draft: 0, ready: 0, scheduled: 0, featured: 0, trending: 0 };
+  if (!isMongoConfigured()) return empty;
+
+  try {
+    const collection = await getArticlesCollection();
+    const [total, published, draft, ready, scheduled, featured, trending] = await Promise.all([
+      collection.countDocuments({}),
+      collection.countDocuments({ status: "published" }),
+      collection.countDocuments({ status: "draft" }),
+      collection.countDocuments({ status: "ready" }),
+      collection.countDocuments({ status: "scheduled" }),
+      collection.countDocuments({ featured: true }),
+      collection.countDocuments({ trending: true }),
+    ]);
+    return { total, published, draft, ready, scheduled, featured, trending };
+  } catch (error) {
+    console.error("[lib/admin/articles] MongoDB unreachable while computing dashboard stats:", error);
+    return empty;
   }
-  const collection = await getArticlesCollection();
-  const [total, published, draft, ready, scheduled, featured, trending] = await Promise.all([
-    collection.countDocuments({}),
-    collection.countDocuments({ status: "published" }),
-    collection.countDocuments({ status: "draft" }),
-    collection.countDocuments({ status: "ready" }),
-    collection.countDocuments({ status: "scheduled" }),
-    collection.countDocuments({ featured: true }),
-    collection.countDocuments({ trending: true }),
-  ]);
-  return { total, published, draft, ready, scheduled, featured, trending };
 }
 
 /**
@@ -571,18 +588,59 @@ export async function articleDocToTopic(doc: ArticleDoc): Promise<Topic> {
 }
 
 /** Published (or due-scheduled) CMS articles as TopicMeta, for merging into lib/content.ts#getAllTopics(). */
+/**
+ * Published (or due-scheduled) CMS articles as TopicMeta, for merging
+ * into lib/content.ts#getAllTopics().
+ *
+ * Resilient by design, not just when unconfigured: if MongoDB is
+ * genuinely unreachable (a real outage, a build-time network/TLS
+ * failure — see the long comment on app/topics/[slug]/page.tsx's
+ * generateStaticParams for the concrete incident this defends
+ * against), this logs the failure clearly and returns an empty array
+ * instead of throwing. Every caller (the homepage, /topics, RSS,
+ * sitemap) already merges this with the real MDX articles from
+ * lib/mdx.ts, so a Mongo outage degrades those pages to "today's CMS
+ * articles are temporarily unavailable, the site's core content still
+ * works" rather than a hard 500/build failure — the same trade-off
+ * already made for `!isMongoConfigured()`, just widened to cover
+ * "configured but not reachable right now" too. This is not returning
+ * fake data: it's a real, empty result for a genuinely inaccessible
+ * data source, and it self-heals on the next successful read (ISR
+ * revalidation, or simply the next request once Mongo is back).
+ */
 export async function getPublishedArticlesAsTopicMetas(): Promise<TopicMeta[]> {
   if (!isMongoConfigured()) return [];
-  const collection = await getArticlesCollection();
-  const docs = await collection.find(isEffectivelyPublishedFilter(new Date().toISOString())).toArray();
-  return docs.map(articleDocToTopicMeta);
+  try {
+    const collection = await getArticlesCollection();
+    const docs = await collection.find(isEffectivelyPublishedFilter(new Date().toISOString())).toArray();
+    return docs.map(articleDocToTopicMeta);
+  } catch (error) {
+    console.error("[lib/admin/articles] MongoDB unreachable while listing published articles — degrading to MDX-only content for this read:", error);
+    return [];
+  }
 }
 
-/** A single published (or due-scheduled) CMS article by slug, fully rendered — or null if it doesn't exist / isn't public yet (drafts and not-yet-due scheduled articles are never reachable at their public URL). */
+/**
+ * A single published (or due-scheduled) CMS article by slug, fully
+ * rendered — null if it doesn't exist, isn't public yet, OR MongoDB is
+ * genuinely unreachable right now (same resilience reasoning as
+ * getPublishedArticlesAsTopicMetas above). Callers already treat null
+ * as "show a 404" (see getTopicBySlug in lib/content.ts) — during a
+ * real Mongo outage that means a CMS article is temporarily
+ * unreachable rather than the whole site going down, which is the
+ * correct trade-off for a database-backed page: it cannot render
+ * without the database, full stop, but nothing else on the site
+ * should go down because of it.
+ */
 export async function getPublishedArticleBySlugAsTopic(slug: string): Promise<Topic | null> {
   if (!isMongoConfigured()) return null;
-  const collection = await getArticlesCollection();
-  const doc = await collection.findOne({ slug, ...isEffectivelyPublishedFilter(new Date().toISOString()) });
-  if (!doc) return null;
-  return articleDocToTopic(doc);
+  try {
+    const collection = await getArticlesCollection();
+    const doc = await collection.findOne({ slug, ...isEffectivelyPublishedFilter(new Date().toISOString()) });
+    if (!doc) return null;
+    return articleDocToTopic(doc);
+  } catch (error) {
+    console.error(`[lib/admin/articles] MongoDB unreachable while loading article "${slug}":`, error);
+    return null;
+  }
 }

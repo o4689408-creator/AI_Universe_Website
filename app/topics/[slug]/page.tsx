@@ -16,10 +16,10 @@ import { BookmarkButton } from "@/components/engagement/BookmarkButton";
 import { NewsletterSection } from "@/sections/NewsletterSection";
 import {
   getAdjacentTopics,
-  getAllTopics,
   getTopicBySlug,
   getTopicsBySlugs,
 } from "@/lib/content";
+import { listTopicSlugs } from "@/lib/mdx";
 import { getVideoById } from "@/lib/videos";
 import { absoluteUrl, buildArticleJsonLd, buildArticleMetadata } from "@/lib/seo";
 
@@ -35,9 +35,34 @@ interface ArticlePageProps {
 // hour rather than staying stale until the next full deploy.
 export const revalidate = 3600;
 
+// MDX-only on purpose (listTopicSlugs(), NOT getAllTopics()).
+//
+// getAllTopics() merges MDX + MongoDB-backed CMS articles — correct
+// for every *runtime* read, but generateStaticParams() runs during
+// the build's "Collecting page data" step, which has no guaranteed
+// MongoDB network path (this is exactly what broke: Vercel's build
+// container hit `ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR` trying to reach
+// MongoDB Atlas from here). The four hand-authored .mdx articles need
+// zero database access to know their own slugs, so this list is
+// MDX-only and needs nothing but the filesystem.
+//
+// This does NOT remove CMS articles from the public site: slugs not
+// covered here simply aren't pre-built. `dynamicParams` defaults to
+// true, so a CMS article's page (and its metadata, below) still
+// renders correctly the first time someone actually requests it — on
+// a real deployed serverless function, with real runtime network
+// access to MongoDB, not the build container. It's then cached like
+// any other ISR page (see `revalidate` above). Same principle already
+// applied to app/topics/[slug]/opengraph-image.tsx for the same
+// reason.
+//
+// `force-dynamic` was considered and deliberately NOT used: it would
+// disable static generation for every slug, including the four MDX
+// articles that have no reason to lose it, trading away real
+// performance to solve a problem that's actually specific to
+// build-time-only Mongo access.
 export async function generateStaticParams() {
-  const topics = await getAllTopics();
-  return topics.map((topic) => ({ slug: topic.slug }));
+  return listTopicSlugs().map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({

@@ -37,17 +37,23 @@ export interface TagWithUsage {
 
 export async function listTags(query?: string): Promise<TagWithUsage[]> {
   if (!isMongoConfigured()) return [];
-  const collection = await getTagsCollection();
-  const filter = query?.trim() ? { name: { $regex: query.trim(), $options: "i" } } : {};
+  try {
+    const collection = await getTagsCollection();
+    const filter = query?.trim() ? { name: { $regex: query.trim(), $options: "i" } } : {};
 
-  const [tags, topics] = await Promise.all([collection.find(filter).sort({ name: 1 }).toArray(), getAllTopics()]);
+    const [tags, topics] = await Promise.all([collection.find(filter).sort({ name: 1 }).toArray(), getAllTopics()]);
 
-  return tags.map((tag) => ({
-    id: tag._id.toString(),
-    name: tag.name,
-    slug: tag.slug,
-    usageCount: topics.filter((t) => t.tags.includes(tag.name)).length,
-  }));
+    return tags.map((tag) => ({
+      id: tag._id.toString(),
+      name: tag.name,
+      slug: tag.slug,
+      usageCount: topics.filter((t) => t.tags.includes(tag.name)).length,
+    }));
+  } catch (error) {
+    // Same reasoning as lib/admin/categories.ts#listCategories.
+    console.error("[lib/admin/tags] MongoDB unreachable while listing tags:", error);
+    return [];
+  }
 }
 
 export async function createTag(name: string): Promise<TagDoc> {

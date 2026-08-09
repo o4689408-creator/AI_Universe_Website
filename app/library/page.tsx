@@ -12,6 +12,20 @@ export const metadata: Metadata = buildPageMetadata({
   noIndex: true,
 });
 
+// This page was never a real candidate for static generation — its
+// entire content is a lookup against bookmarks/history stored on the
+// visitor's own device (see LibraryContent), so there's nothing
+// meaningful to pre-build; every visitor needs their own live render
+// anyway. Marking it dynamic moves its getAllTopics() call (which
+// includes a MongoDB query for CMS-authored articles) to real request
+// time on a live server, instead of Vercel's build step — the same
+// underlying issue, and the same fix, as app/topics/[slug]/page.tsx's
+// generateStaticParams change; see that file for the full
+// explanation. Confirmed necessary by reproducing the failure: with
+// MongoDB deliberately unreachable, the build failed here immediately
+// after the /topics/[slug] fix was applied.
+export const dynamic = "force-dynamic";
+
 export default async function LibraryPage() {
   const topics = await getAllTopics();
 

@@ -40,19 +40,31 @@ export interface CategoryWithUsage {
 
 export async function listCategories(): Promise<CategoryWithUsage[]> {
   if (!isMongoConfigured()) return [];
-  const collection = await getCategoriesCollection();
-  const [categories, topics] = await Promise.all([
-    collection.find({}).sort({ name: 1 }).toArray(),
-    getAllTopics(),
-  ]);
+  try {
+    const collection = await getCategoriesCollection();
+    const [categories, topics] = await Promise.all([
+      collection.find({}).sort({ name: 1 }).toArray(),
+      getAllTopics(),
+    ]);
 
-  return categories.map((cat) => ({
-    id: cat._id.toString(),
-    name: cat.name,
-    slug: cat.slug,
-    usageCount: topics.filter((t) => t.category === cat.name && t.source === "cms").length,
-    mdxUsageCount: topics.filter((t) => t.category === cat.name && t.source === "mdx").length,
-  }));
+    return categories.map((cat) => ({
+      id: cat._id.toString(),
+      name: cat.name,
+      slug: cat.slug,
+      usageCount: topics.filter((t) => t.category === cat.name && t.source === "cms").length,
+      mdxUsageCount: topics.filter((t) => t.category === cat.name && t.source === "mdx").length,
+    }));
+  } catch (error) {
+    // Same reasoning as lib/admin/articles.ts's getPublishedArticlesAsTopicMetas:
+    // a genuinely unreachable MongoDB shouldn't hard-crash this page —
+    // this specifically also prevents a build-time failure while
+    // Next.js's static-optimization pass is still deciding whether
+    // /admin/categories needs to be dynamic (it does, via
+    // requireAdminSession()'s cookies() call — but only gets to make
+    // that determination if nothing throws first).
+    console.error("[lib/admin/categories] MongoDB unreachable while listing categories:", error);
+    return [];
+  }
 }
 
 export async function createCategory(name: string): Promise<CategoryDoc> {
