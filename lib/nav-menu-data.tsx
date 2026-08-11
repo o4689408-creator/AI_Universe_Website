@@ -33,6 +33,16 @@ function HomeIcon() {
   );
 }
 
+function NewspaperIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="1.5" y="3.5" width="10" height="9.5" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M4 6.5h5M4 8.5h5M4 10.5h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M11.5 5.5h1.5a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5h-8" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function CompassIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -122,6 +132,16 @@ export const videosMenu: MegaMenuColumn[] = [
     links: [
       { title: "All Videos", description: "Every companion breakdown", href: "/videos", icon: <PlayCircleIcon /> },
       { title: "Subscribe on YouTube", description: "Catch new videos first", href: YOUTUBE_CHANNEL_URL, external: true, icon: <YouTubeIcon /> },
+    ],
+  },
+];
+
+export const newsMenu: MegaMenuColumn[] = [
+  {
+    heading: "AI News",
+    links: [
+      { title: "Latest AI News", description: "Model launches, research, and industry moves", href: "/news", icon: <NewspaperIcon /> },
+      { title: "All Topics", description: "Full deep-dive archive", href: "/topics", icon: <GridIcon /> },
     ],
   },
 ];

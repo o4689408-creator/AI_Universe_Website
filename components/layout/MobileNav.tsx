@@ -20,6 +20,7 @@ const navGroups = [
     links: [
       { label: "Home", href: "/", icon: HomeIcon },
       { label: "Topics", href: "/topics", icon: TopicsIcon },
+      { label: "AI News", href: "/news", icon: NewsIcon },
       { label: "Videos", href: "/videos", icon: VideosIcon },
       { label: "About", href: "/about", icon: AboutIcon },
     ],
@@ -246,6 +247,16 @@ function TopicsIcon() {
       <rect x="10" y="3.5" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
       <rect x="3" y="10.5" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
       <rect x="10" y="10.5" width="5" height="5" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+function NewsIcon() {
+  return (
+    <svg {...iconProps()}>
+      <rect x="2.5" y="4" width="10.5" height="10" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5.3 7h5M5.3 9.3h5M5.3 11.6h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M13 6h0.7a1.3 1.3 0 0 1 1.3 1.3v5.2a1.3 1.3 0 0 1-1.3 1.3H5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
     </svg>
   );
 }

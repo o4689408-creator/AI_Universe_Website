@@ -9,7 +9,7 @@ import type { MegaMenuColumn } from "@/lib/nav-menu-data";
 import { cn } from "@/lib/utils";
 
 interface NavMegaItemProps {
-  label: string;
+  label: React.ReactNode;
   icon?: React.ReactNode;
   href?: string;
   onClick?: () => void;

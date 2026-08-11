@@ -66,7 +66,7 @@ The original transformer paper, "Attention Is All You Need," was published in 20
 
 <Quiz
   question="What lets a transformer process an entire sentence at once instead of word by word?"
-  correctIndex={1}
+  correctIndex="1"
   correctExplanation="Self-attention lets every word look at every other word simultaneously and weigh their relevance — the core mechanism that replaced step-by-step sequence processing."
   incorrectExplanation="It's self-attention — the mechanism that lets a model weigh every word against every other word at once, rather than processing the sequence step by step."
 >
@@ -75,6 +75,42 @@ The original transformer paper, "Attention Is All You Need," was published in 20
   <QuizOption>Faster GPUs alone</QuizOption>
   <QuizOption>More training data</QuizOption>
 </Quiz>
+
+<QuizSeries>
+  <QuizQuestion
+    question="What does self-attention let each word in a sentence do?"
+    correctIndex="2"
+    correctExplanation="Every word computes a relevance score against every other word in the sequence, all at once — that's the mechanism that replaced step-by-step processing."
+    incorrectExplanation="Self-attention lets each word weigh every other word in the sequence simultaneously, computing how relevant each one is to it."
+  >
+    <QuizOption>Only look at the word immediately before it</QuizOption>
+    <QuizOption>Ignore punctuation and stop words</QuizOption>
+    <QuizOption>Weigh the relevance of every other word at once</QuizOption>
+    <QuizOption>Translate itself into a fixed vocabulary index</QuizOption>
+  </QuizQuestion>
+  <QuizQuestion
+    question="Why do transformers scale so well on GPU hardware?"
+    correctIndex="1"
+    correctExplanation="Their core computation is matrix multiplication across the whole sequence at once — exactly the kind of parallel math GPUs are built to accelerate."
+    incorrectExplanation="It comes down to matrix multiplication across the entire sequence at once, which maps extremely well onto how GPUs parallelize computation."
+  >
+    <QuizOption>They use less memory than earlier architectures</QuizOption>
+    <QuizOption>Their core computation parallelizes as matrix multiplication</QuizOption>
+    <QuizOption>They were designed specifically for one GPU vendor</QuizOption>
+    <QuizOption>They avoid floating-point math entirely</QuizOption>
+  </QuizQuestion>
+  <QuizQuestion
+    question="Who published the original transformer paper, and when?"
+    correctIndex="0"
+    correctExplanation="'Attention Is All You Need' came out of Google in 2017 — several of its eight authors went on to found or join other major AI labs."
+    incorrectExplanation="It was a team of eight researchers at Google, published in 2017, in a paper titled 'Attention Is All You Need.'"
+  >
+    <QuizOption>A team at Google, in 2017</QuizOption>
+    <QuizOption>A team at OpenAI, in 2019</QuizOption>
+    <QuizOption>A university lab, in 2015</QuizOption>
+    <QuizOption>An independent researcher, in 2020</QuizOption>
+  </QuizQuestion>
+</QuizSeries>
 
 ## Key takeaways
 

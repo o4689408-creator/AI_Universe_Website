@@ -18,6 +18,7 @@ import { Timeline, TimelineItem } from "@/components/article/Timeline";
 import { FAQSection, FAQItem } from "@/components/article/FAQSection";
 import { KeyTakeaways } from "@/components/article/KeyTakeaways";
 import { Quiz, QuizOption } from "@/components/article/Quiz";
+import { QuizSeries, QuizQuestion } from "@/components/article/QuizSeries";
 import { QuickSummary, DidYouKnow, ReaderChallenge, PredictionCard } from "@/components/article/EngagementBoxes";
 import { AnimatedReveal } from "@/components/ui/AnimatedReveal";
 
@@ -197,6 +198,8 @@ export const mdxComponents: MDXComponents = {
   KeyTakeaways,
   Quiz,
   QuizOption,
+  QuizSeries,
+  QuizQuestion,
   QuickSummary,
   DidYouKnow,
   ReaderChallenge,

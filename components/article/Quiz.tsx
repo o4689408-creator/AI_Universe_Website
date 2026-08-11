@@ -8,10 +8,15 @@ import { AnimatedReveal } from "@/components/ui/AnimatedReveal";
 
 interface QuizProps {
   /** e.g. "Question 1 of 2" — purely a label, no logic depends on it. */
-  index?: number;
-  total?: number;
+  index?: number | string;
+  total?: number | string;
   question: string;
-  correctIndex: number;
+  /**
+   * Accepts a number or a numeric string. MDX articles MUST pass this
+   * as a quoted string (`correctIndex="1"`), not a JSX numeric
+   * expression (`correctIndex={1}`) — see the long comment below.
+   */
+  correctIndex: number | string;
   correctExplanation: string;
   incorrectExplanation: string;
   /** Pass <QuizOption>...</QuizOption> children, one per answer choice. */
@@ -30,6 +35,21 @@ interface QuizProps {
  * codebase, which is the MDX prop shape proven to compile reliably
  * here (an array-literal prop value tripped a build-time prerender
  * error across every article using it).
+ *
+ * `correctIndex`/`index`/`total` are QUOTED STRINGS in every article's
+ * MDX source (`correctIndex="1"`), not JSX numeric expressions
+ * (`correctIndex={1}`) — this is a confirmed, verified fix for a real
+ * bug, not a style choice. Numeric JSX expression-container props on
+ * this component were compiling to `undefined`: a temporary debug log
+ * added during a real `next build` showed `correctIndex`, `index`, and
+ * `total` all arriving as `undefined` despite being written as
+ * `{1}`/`{2}` in every article, while plain string attributes like
+ * `question="..."` on the exact same element worked correctly. With
+ * `correctIndex === undefined`, `selected === correctIndex` is false
+ * for every possible answer — which is exactly the reported bug: every
+ * option, including the genuinely correct one, always showed as wrong.
+ * String attributes are unaffected, so this component accepts strings
+ * (or real numbers, for any non-MDX caller) and coerces internally.
  */
 export function Quiz({
   index,
@@ -44,14 +64,18 @@ export function Quiz({
   const [shakeIndex, setShakeIndex] = useState<number | null>(null);
   const handleRipple = useRipple();
 
+  const correctIndexNum = typeof correctIndex === "string" ? Number.parseInt(correctIndex, 10) : correctIndex;
+  const indexNum = typeof index === "string" ? Number.parseInt(index, 10) : index;
+  const totalNum = typeof total === "string" ? Number.parseInt(total, 10) : total;
+
   const options = Children.toArray(children).filter(isValidElement);
   const isAnswered = selected !== null;
-  const isCorrect = selected === correctIndex;
+  const isCorrect = selected === correctIndexNum;
 
   function handleSelect(optionIndex: number) {
     if (isAnswered) return;
     setSelected(optionIndex);
-    if (optionIndex !== correctIndex) {
+    if (optionIndex !== correctIndexNum) {
       setShakeIndex(optionIndex);
       setTimeout(() => setShakeIndex(null), 450);
     }
@@ -68,7 +92,7 @@ export function Quiz({
         <div className="relative flex flex-col gap-4">
           <span className="flex w-fit items-center gap-2 rounded-full bg-accent-muted px-3 py-1 text-label font-semibold uppercase tracking-wide text-accent">
             🧠 Quick Check
-            {index && total ? ` · ${index}/${total}` : ""}
+            {indexNum && totalNum ? ` · ${indexNum}/${totalNum}` : ""}
           </span>
 
           <h4 className="text-body-lg font-semibold leading-snug text-text-primary">{question}</h4>
@@ -76,7 +100,7 @@ export function Quiz({
           <div className="flex flex-col gap-2.5">
             {options.map((option, optionIndex) => {
               const isSelectedOption = selected === optionIndex;
-              const isCorrectOption = optionIndex === correctIndex;
+              const isCorrectOption = optionIndex === correctIndexNum;
               const showAsCorrect = isAnswered && isCorrectOption;
               const showAsWrong = isAnswered && isSelectedOption && !isCorrectOption;
 
@@ -143,7 +167,13 @@ export function Quiz({
   );
 }
 
-/** One answer choice inside a <Quiz>. Renders its children as the button label. */
-export function QuizOption({ children }: { children?: ReactNode }) {
+/** One answer choice inside a <Quiz> or <QuizQuestion>. Renders its children as the button label. `imageUrl`/`imageAlt` are read directly from this element's props by QuizSeries for image-based options; Quiz (single-question) renders text-only and ignores them. */
+export function QuizOption({
+  children,
+}: {
+  children?: ReactNode;
+  imageUrl?: string;
+  imageAlt?: string;
+}) {
   return <>{children}</>;
 }

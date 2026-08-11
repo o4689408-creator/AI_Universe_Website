@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import {
   homeMenu,
   topicsMenu,
+  newsMenu,
   videosMenu,
   exploreMenu,
   aboutMenu,
@@ -118,6 +119,19 @@ export function Header({ topics, videos = [] }: HeaderProps) {
                 featured={featuredForTopics}
               />
               <NavMegaItem label="Videos" icon={<VideosNavIcon />} href="/videos" columns={videosMenu} />
+              <NavMegaItem
+                label={
+                  <span className="flex items-center gap-1.5">
+                    AI News
+                    <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                      New
+                    </span>
+                  </span>
+                }
+                icon={<NewsNavIcon />}
+                href="/news"
+                columns={newsMenu}
+              />
               <NavMegaItem
                 label="Explore"
                 icon={<ExploreNavIcon />}
@@ -276,6 +290,16 @@ function VideosNavIcon() {
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <rect x="2" y="4" width="12" height="8" rx="1.8" stroke="currentColor" strokeWidth="1.3" />
       <path d="M6.7 6.3 9.8 8l-3.1 1.7V6.3Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function NewsNavIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="1.5" y="3.5" width="9.5" height="9" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M4 6.2h4.5M4 8.2h4.5M4 10.2h2.7" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M11 5.2h1.5a1.5 1.5 0 0 1 1.5 1.5v4.6a1.5 1.5 0 0 1-1.5 1.5H4.5" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
     </svg>
   );
 }
