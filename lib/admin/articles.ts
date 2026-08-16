@@ -151,6 +151,11 @@ export async function createArticle(rawInput: ArticleInput, status: ArticleStatu
 
   const now = new Date().toISOString();
   const featuredImageUrl = input.featuredImageUrl?.trim() || undefined;
+  // Drop any image row the admin added but never filled in — an empty
+  // "slot" is a normal in-progress editing state, not something that
+  // should reach the public gallery.
+  const images = (input.images ?? []).filter((image) => image.url?.trim());
+  const quiz = input.quiz ?? [];
   const youtubeUrl = input.youtubeUrl?.trim() || undefined;
   const seoTitle = input.seoTitle?.trim() || undefined;
   const metaDescription = input.metaDescription?.trim() || undefined;
@@ -172,6 +177,8 @@ export async function createArticle(rawInput: ArticleInput, status: ArticleStatu
     content: input.content,
     heroImageUrl: input.heroImageUrl.trim(),
     featuredImageUrl,
+    images,
+    quiz,
     youtubeUrl,
     authorId: input.authorId?.trim() || "founder",
     readTimeMinutes: input.readTimeMinutes ?? estimateReadTimeMinutes(input.content),
@@ -245,6 +252,8 @@ export async function updateArticle(id: string, rawInput: ArticleInput): Promise
     tags: (input.tags ?? []).map((tag) => tag.trim()).filter(Boolean),
     content: input.content,
     heroImageUrl: input.heroImageUrl.trim(),
+    images: (input.images ?? existing.images ?? []).filter((image) => image.url?.trim()),
+    quiz: input.quiz ?? existing.quiz ?? [],
     authorId: input.authorId?.trim() || existing.authorId,
     readTimeMinutes: input.readTimeMinutes ?? estimateReadTimeMinutes(input.content),
     updatedAt: now,
@@ -312,6 +321,8 @@ export async function autosaveArticle(
     tags: (partial.tags ?? []).map((tag) => tag.trim()).filter(Boolean),
     content: partial.content ?? "",
     heroImageUrl: partial.heroImageUrl?.trim() ?? "",
+    images: partial.images ?? [],
+    quiz: partial.quiz ?? [],
     authorId: partial.authorId?.trim() || "founder",
     readTimeMinutes: estimateReadTimeMinutes(partial.content ?? ""),
     updatedAt: now,
@@ -565,6 +576,8 @@ export function articleDocToTopicMeta(doc: ArticleDoc): TopicMeta {
     updatedAt: doc.updatedAt,
     readTimeMinutes: doc.readTimeMinutes,
     heroImageUrl: doc.featuredImageUrl || doc.heroImageUrl,
+    images: doc.images.length > 0 ? doc.images : undefined,
+    quiz: doc.quiz.length > 0 ? doc.quiz : undefined,
     trending: doc.trending,
     featured: doc.featured,
     sources: doc.sources,

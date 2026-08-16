@@ -59,14 +59,26 @@ routes statically generated.
       remain unpatched in the 14.x line (fixed only in 15.5.16+/16.2.5+).
       Most don't apply to this app's architecture (they concern
       middleware/i18n/rewrites in the Pages Router — this project uses
-      neither). The image-optimizer DoS advisory is reduced in
-      practice by the strict `remotePatterns` allow-list in
-      `next.config.mjs` (only `i.ytimg.com`, no open wildcard). A
+      neither). **Update, post-Admin-CMS:** the image-optimizer DoS
+      advisory was previously reduced by a strict `remotePatterns`
+      allow-list; that allow-list was later deliberately widened to any
+      HTTPS host (see the comment in `next.config.mjs`) so the Admin CMS
+      can accept image URLs from arbitrary legitimate CDNs without a
+      redeploy per host. The mitigation for this advisory is now
+      server-side SSRF-guarded validation at save time instead (private/
+      loopback/link-local hosts and non-HTTPS URLs are rejected — see
+      `lib/admin/actions/preview-actions.ts` and
+      `lib/admin/validation.ts`), not a narrow `remotePatterns` list. A
       deliberate, tested Next.js major-version upgrade is recommended
       as a near-term follow-up, not bundled into this launch.
-- [x] No secrets or API keys in the codebase; the only environment
-      variables used (`NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_ANALYTICS_DOMAIN`)
-      are non-sensitive and safe to expose client-side.
+- [x] No secrets or API keys in the codebase. **Update, post-Admin-CMS:**
+      this list grew well beyond the two client-safe variables noted
+      here originally — `MONGODB_URI`, `ADMIN_EMAIL`,
+      `ADMIN_PASSWORD_HASH`, and `SESSION_SECRET` are all genuinely
+      sensitive and required for the Admin CMS; `RESEND_API_KEY` and
+      `WORDS_API_KEY` are optional and sensitive when set. None of them
+      are hardcoded anywhere — see `.env.example` for the authoritative,
+      current list with usage notes for each.
 - [x] No `dangerouslySetInnerHTML` except JSON-LD blocks, which
       serialize only build-time-controlled data (never user input).
 

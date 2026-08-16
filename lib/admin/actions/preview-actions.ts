@@ -64,6 +64,25 @@ function isPrivateOrLocalHost(hostname: string): boolean {
 }
 
 /**
+ * Sent with every outbound check below. Node's `fetch()` otherwise sends
+ * no User-Agent at all (or a generic, non-browser one, depending on the
+ * Node/undici version) — and it's ordinary, common bot-protection
+ * behavior on image CDNs (Cloudflare-fronted hosts especially) to 403 or
+ * challenge a request that doesn't look like it came from a browser,
+ * before the URL itself is even considered. That's what was actually
+ * producing "URL didn't respond" for perfectly reachable, legitimate
+ * images — not a broken URL, a request that looked like a bot. This
+ * doesn't defeat any real protection: a browser loading the exact same
+ * URL from the live site sends this same kind of header, so this check
+ * now just looks like the ordinary page load it's standing in for.
+ */
+const CHECK_REQUEST_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+} as const;
+
+/**
  * Checks a single URL's reachability (for the External Link Checker)
  * or whether it actually serves an image (for Hero/Featured/OG Image
  * URL validation) — both reuse this one function since "does this URL
@@ -101,13 +120,19 @@ export async function checkUrlAction(rawUrl: string): Promise<UrlCheckResult> {
     let response = await fetch(parsed.toString(), {
       method: "HEAD",
       redirect: "follow",
+      headers: CHECK_REQUEST_HEADERS,
       signal: controller.signal,
     });
 
     // Some hosts (Unsplash included, at times) don't answer HEAD
     // correctly — fall back to a real GET before declaring it broken.
     if (!response.ok && response.status !== 405) {
-      response = await fetch(parsed.toString(), { method: "GET", redirect: "follow", signal: controller.signal });
+      response = await fetch(parsed.toString(), {
+        method: "GET",
+        redirect: "follow",
+        headers: CHECK_REQUEST_HEADERS,
+        signal: controller.signal,
+      });
     }
 
     const contentType = response.headers.get("content-type") ?? "";

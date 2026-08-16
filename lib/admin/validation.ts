@@ -1,4 +1,5 @@
 import type { ArticleInput } from "@/types/admin";
+import type { QuizQuestionData } from "@/types/content";
 
 export class ArticleValidationError extends Error {
   fieldErrors: Record<string, string>;
@@ -7,6 +8,57 @@ export class ArticleValidationError extends Error {
     this.name = "ArticleValidationError";
     this.fieldErrors = fieldErrors;
   }
+}
+
+const MAX_ARTICLE_IMAGES = 15;
+const MAX_QUIZ_QUESTIONS = 10;
+const MIN_QUIZ_OPTIONS = 2;
+const MAX_QUIZ_OPTIONS = 6;
+
+/**
+ * Validates the whole quiz array at once and returns a single message
+ * (or undefined if it's fine) rather than per-question field errors —
+ * QuizEditorField doesn't currently have per-question error slots to
+ * render into, so one clear top-of-section message is more useful than
+ * errors that would otherwise go unseen.
+ *
+ * The correctIndex bounds check here is deliberately the same invariant
+ * QuizSeries.tsx re-checks at render time (Number.isInteger, in range for
+ * that question's actual option count) — this is what stops a malformed
+ * quiz from ever being saved in the first place, rather than relying
+ * solely on the runtime component to fail safely after the fact.
+ */
+function validateQuizQuestions(questions: QuizQuestionData[]): string | undefined {
+  if (questions.length > MAX_QUIZ_QUESTIONS) {
+    return `Maximum ${MAX_QUIZ_QUESTIONS} questions per quiz (found ${questions.length}).`;
+  }
+
+  for (const [i, q] of questions.entries()) {
+    const label = `Question ${i + 1}`;
+
+    if (!q.question?.trim()) return `${label}: the question text is required.`;
+    if (!q.correctExplanation?.trim()) return `${label}: the "if correct" explanation is required.`;
+    if (!q.incorrectExplanation?.trim()) return `${label}: the "if incorrect" explanation is required.`;
+
+    if (!Array.isArray(q.options) || q.options.length < MIN_QUIZ_OPTIONS) {
+      return `${label}: at least ${MIN_QUIZ_OPTIONS} options are required.`;
+    }
+    if (q.options.length > MAX_QUIZ_OPTIONS) {
+      return `${label}: maximum ${MAX_QUIZ_OPTIONS} options.`;
+    }
+    if (q.options.some((option) => !option.text?.trim())) {
+      return `${label}: every option needs text.`;
+    }
+    if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
+      // This exact check, applied before saving rather than only at
+      // render time, is what makes it structurally very hard to ever
+      // reproduce the original "correct answer marked wrong" bug through
+      // this editor — a malformed correctIndex simply can't be saved.
+      return `${label}: the marked correct option is invalid — re-select it before saving.`;
+    }
+  }
+
+  return undefined;
 }
 
 const YOUTUBE_URL_PATTERN =
@@ -77,6 +129,20 @@ export function validateArticleInput(input: ArticleInput): ArticleInput {
   }
   if (input.twitterImageUrl && !isLikelyUrl(input.twitterImageUrl)) {
     errors.twitterImageUrl = "Enter a valid image URL (starting with https://).";
+  }
+
+  if (input.images && input.images.length > MAX_ARTICLE_IMAGES) {
+    errors.images = `Maximum ${MAX_ARTICLE_IMAGES} images per article (found ${input.images.length}).`;
+  } else if (input.images?.some((image) => image.url?.trim() && !isLikelyUrl(image.url))) {
+    // A row with no URL yet is a normal in-progress "slot", not an error —
+    // only a URL that's actually been typed and is malformed is flagged.
+    // lib/content.ts filters out any empty rows before they reach a reader.
+    errors.images = "Every image needs a valid URL (starting with https://), or leave it blank to remove it.";
+  }
+
+  if (input.quiz) {
+    const quizError = validateQuizQuestions(input.quiz);
+    if (quizError) errors.quiz = quizError;
   }
 
   if (

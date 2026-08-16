@@ -8,11 +8,14 @@ import { saveArticleAction, setArticleStatusAction, type ArticleFormState } from
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import { ArticleEditor } from "@/components/admin/editor/ArticleEditor";
 import { ImageUrlField } from "@/components/admin/editor/ImageUrlField";
+import { ImageListField } from "@/components/admin/editor/ImageListField";
+import { QuizEditorField } from "@/components/admin/editor/QuizEditorField";
 import { YouTubePreview } from "@/components/admin/editor/YouTubePreview";
 import { PublishPreviewModal } from "@/components/admin/editor/PublishPreviewModal";
 import { Badge } from "@/components/admin/Badge";
 import { statusTone, statusLabel } from "@/components/admin/status";
 import type { LinkableTopic } from "@/components/admin/editor/InternalLinkAssistant";
+import type { ArticleImage, QuizQuestionData } from "@/types/content";
 
 export interface ArticleFormValues {
   id?: string;
@@ -25,6 +28,8 @@ export interface ArticleFormValues {
   content: string;
   heroImageUrl: string;
   featuredImageUrl: string;
+  images: ArticleImage[];
+  quiz: QuizQuestionData[];
   youtubeUrl: string;
   authorId: string;
   readTimeMinutes: number | "";
@@ -51,6 +56,8 @@ const emptyValues: ArticleFormValues = {
   content: "",
   heroImageUrl: "",
   featuredImageUrl: "",
+  images: [],
+  quiz: [],
   youtubeUrl: "",
   authorId: "founder",
   readTimeMinutes: "",
@@ -122,6 +129,8 @@ export function ArticleForm({
   const [summary, setSummary] = useState(values.summary);
   const [heroImageUrl, setHeroImageUrl] = useState(values.heroImageUrl);
   const [featuredImageUrl, setFeaturedImageUrl] = useState(values.featuredImageUrl);
+  const [images, setImages] = useState<ArticleImage[]>(values.images);
+  const [quiz, setQuiz] = useState<QuizQuestionData[]>(values.quiz);
   const [youtubeUrl, setYoutubeUrl] = useState(values.youtubeUrl);
   const [ogImageUrl, setOgImageUrl] = useState(values.ogImageUrl);
   const [twitterImageUrl, setTwitterImageUrl] = useState(values.twitterImageUrl);
@@ -301,6 +310,11 @@ export function ArticleForm({
           error={state.fieldErrors?.featuredImageUrl}
         />
 
+        <div className="border-t border-border-subtle pt-5">
+          <ImageListField name="images" images={images} onChange={setImages} />
+          {state.fieldErrors?.images && <p className="mt-2 text-label text-error">{state.fieldErrors.images}</p>}
+        </div>
+
         <div className="flex flex-col gap-2">
           <Field
             label="YouTube URL"
@@ -320,6 +334,12 @@ export function ArticleForm({
           </Field>
           <YouTubePreview url={youtubeUrl} />
         </div>
+      </section>
+
+      <section className="flex flex-col gap-5 rounded-xl border border-border-subtle bg-bg-surface-1/50 p-6 backdrop-blur-md">
+        <h2 className="text-body-lg font-semibold text-text-primary">Quiz</h2>
+        <QuizEditorField name="quiz" questions={quiz} onChange={setQuiz} />
+        {state.fieldErrors?.quiz && <p className="text-label text-error">{state.fieldErrors.quiz}</p>}
       </section>
 
       <section className="flex flex-col gap-5 rounded-xl border border-border-subtle bg-bg-surface-1/50 p-6 backdrop-blur-md">

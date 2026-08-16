@@ -110,6 +110,28 @@ The original transformer paper, "Attention Is All You Need," was published in 20
     <QuizOption>A university lab, in 2015</QuizOption>
     <QuizOption>An independent researcher, in 2020</QuizOption>
   </QuizQuestion>
+  <QuizQuestion
+    question="Since self-attention looks at every word at once, how does a transformer know word order?"
+    correctIndex="1"
+    correctExplanation="Positional encodings — a pattern added to each word's vector before attention runs — are what let the model tell 'dog bites man' from 'man bites dog,' since attention itself treats every position symmetrically."
+    incorrectExplanation="Attention on its own is order-agnostic, so transformers add positional encodings to each word's vector beforehand — that's what actually carries the order information."
+  >
+    <QuizOption>It processes words in a fixed left-to-right pass first</QuizOption>
+    <QuizOption>Positional information is added to each word's vector before attention runs</QuizOption>
+    <QuizOption>Word order doesn't actually matter to a transformer</QuizOption>
+    <QuizOption>Punctuation marks tell it where each word falls in the sentence</QuizOption>
+  </QuizQuestion>
+  <QuizQuestion
+    question="What's the point of using several 'attention heads' instead of just one?"
+    correctIndex="1"
+    correctExplanation="Running several heads in parallel lets the model track different kinds of relationships at once — say, grammatical structure in one head and topical relevance in another — instead of compressing everything through a single lens."
+    incorrectExplanation="Multiple heads let the model attend to different kinds of word relationships in parallel, rather than forcing everything through one shared view."
+  >
+    <QuizOption>It's purely a speed optimization with no effect on what's learned</QuizOption>
+    <QuizOption>Each head can focus on a different kind of relationship at once</QuizOption>
+    <QuizOption>One head is hard-coded for nouns, another for verbs</QuizOption>
+    <QuizOption>It lets the model process multiple languages simultaneously</QuizOption>
+  </QuizQuestion>
 </QuizSeries>
 
 ## Key takeaways

@@ -24,6 +24,60 @@ export interface SourceLink {
   url: string;
 }
 
+/**
+ * One image in an article's gallery (up to 15 — see
+ * components/admin/editor/ImageListField.tsx), distinct from
+ * `heroImageUrl`/`featuredImageUrl` on TopicMeta below, which are
+ * single-purpose (the top-of-article hero and the card/OG thumbnail).
+ * This is for additional images used *within* the article body/gallery.
+ * `id` is a stable client-generated key (crypto.randomUUID()) used for
+ * React list identity and drag-reorder — never shown to readers.
+ */
+export interface ArticleImage {
+  id: string;
+  url: string;
+  alt: string;
+  caption?: string;
+}
+
+/**
+ * One answer choice inside a quiz question. `text` is plain text (not
+ * `ReactNode`) because this shape has to survive a MongoDB round-trip
+ * and a plain-JSON <input type="hidden"> in the Admin form — see
+ * QuizSeries.tsx, which maps `text` onto the same internal `label`
+ * field its MDX-authored `<QuizOption>` children already use, so both
+ * sources render through identical code.
+ */
+export interface QuizOptionData {
+  text: string;
+  imageUrl?: string;
+  imageAlt?: string;
+}
+
+/**
+ * One quiz question, in the JSON-safe shape used by CMS-authored
+ * articles (components/admin/editor/QuizEditorField.tsx writes this;
+ * QuizSeries.tsx renders it). MDX-authored articles keep writing
+ * `<QuizQuestion correctIndex="1">` inline in the article body instead —
+ * see the long comment on Quiz.tsx for why that's a quoted string there
+ * — but resolve to this same shape internally, so there is exactly one
+ * quiz-taking implementation regardless of which one authored it.
+ * `correctIndex` is a real number here (from MongoDB, never serialized
+ * through an MDX/JSX prop), but QuizSeries still range-checks it against
+ * `options.length` before trusting it — see its doc comment.
+ */
+export interface QuizQuestionData {
+  question: string;
+  correctIndex: number;
+  correctExplanation: string;
+  incorrectExplanation: string;
+  questionImageUrl?: string;
+  questionImageAlt?: string;
+  explanationImageUrl?: string;
+  explanationImageAlt?: string;
+  options: QuizOptionData[];
+}
+
 export interface Video {
   id: string;
   slug: string;
@@ -64,6 +118,23 @@ export interface TopicMeta {
   featured?: boolean;
   sources: SourceLink[];
   relatedSlugs: string[];
+  /**
+   * Additional gallery images (0–15), Admin-CMS-only for now — MDX
+   * articles can already embed as many images as their author wants
+   * directly in the body, so this is left `undefined` for them rather
+   * than defaulted, and every consumer treats `topic.images` as
+   * optional. See components/article/ArticleImageGallery.tsx.
+   */
+  images?: ArticleImage[];
+  /**
+   * Structured quiz data, Admin-CMS-only — MDX articles keep authoring
+   * their quiz inline in the body via `<QuizQuestion>` (compiled as part
+   * of `content` below) instead, so this stays `undefined` for them.
+   * app/topics/[slug]/page.tsx only renders `<QuizSeries questions={...}>`
+   * when this is present and non-empty, so an MDX article's page never
+   * gets a second, duplicate quiz section.
+   */
+  quiz?: QuizQuestionData[];
   /**
    * Plain-text extraction of the article body (MDX/markdown syntax
    * stripped), used only by lib/search.tsx to match search queries

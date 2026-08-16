@@ -72,6 +72,30 @@ export function Quiz({
   const isAnswered = selected !== null;
   const isCorrect = selected === correctIndexNum;
 
+  // Same class of guard as QuizSeries.tsx (see its long comment): a
+  // missing or malformed correctIndex resolves to NaN, and NaN never
+  // equals anything — including itself — so every option would render as
+  // wrong forever. The quoted-string convention above fixes the specific
+  // historical cause; this checks the actual result, which a typo or a
+  // stale index after reordering options could still get wrong.
+  const isMisconfigured =
+    !Number.isInteger(correctIndexNum) || correctIndexNum < 0 || correctIndexNum >= options.length;
+  if (isMisconfigured) {
+    if (process.env.NODE_ENV !== "production") {
+      return (
+        <div role="alert" className="my-8 rounded-xl border border-error/40 bg-error/10 p-4 text-body-sm text-text-primary">
+          <p className="font-semibold text-error">Quiz configuration issue — visible in development only</p>
+          <p className="mt-1 text-text-secondary">
+            correctIndex {JSON.stringify(correctIndex)} isn&apos;t a valid option index for &quot;{question}&quot; —
+            this question has {options.length} option{options.length === 1 ? "" : "s"} (valid range: 0–
+            {Math.max(options.length - 1, 0)}).
+          </p>
+        </div>
+      );
+    }
+    return null;
+  }
+
   function handleSelect(optionIndex: number) {
     if (isAnswered) return;
     setSelected(optionIndex);

@@ -1,16 +1,16 @@
 "use client";
 
-import { Children, isValidElement, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Children, isValidElement, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useRipple } from "@/lib/hooks/useRipple";
 import { usePrefersReducedMotion } from "@/lib/hooks/usePrefersReducedMotion";
-import { playCorrectSound, playIncorrectSound } from "@/lib/quiz-sound";
+import { playCorrectSound, playIncorrectSound, playCompletionSound } from "@/lib/quiz-sound";
 import { ConfettiBurst } from "@/components/ui/ConfettiBurst";
 import { AnimatedReveal } from "@/components/ui/AnimatedReveal";
+import type { QuizQuestionData } from "@/types/content";
 
 const MAX_QUESTIONS = 10;
-const SOUND_PREF_KEY = "au-quiz-sound-enabled";
 
 interface QuizQuestionProps {
   question: string;
@@ -52,10 +52,42 @@ interface ParsedQuestion {
   options: { label: ReactNode; imageUrl?: string; imageAlt?: string }[];
 }
 
-function parseQuestions(children: ReactNode): ParsedQuestion[] {
-  const questionElements = Children.toArray(children).filter(isValidElement);
+interface QuestionParseError {
+  index: number;
+  reason: string;
+}
 
-  return questionElements.slice(0, MAX_QUESTIONS).map((el) => {
+interface ParsedQuizData {
+  questions: ParsedQuestion[];
+  errors: QuestionParseError[];
+}
+
+/**
+ * Validates and normalizes one question's `correctIndex` against its
+ * actual option count. This is the guard that was missing before: the
+ * quoted-string convention (see Quiz.tsx's doc comment) fixes the one
+ * specific historical cause — a bare numeric JSX expression compiling to
+ * `undefined` — but it never checked the *result*. A missing prop, a
+ * typo'd string ("1O" instead of "10"), or an index left stale after
+ * reordering options would all still produce `NaN` or an out-of-range
+ * number, and `selected === correctIndex` is false for every option in
+ * every one of those cases too — the exact same "correct answer marked
+ * wrong" symptom, just from a different mistake. Rather than trust the
+ * input shape, we check whether the resolved index actually points at one
+ * of this question's real options, and refuse to render the question at
+ * all if it doesn't — a quiz that's missing one broken question is far
+ * better than a quiz that silently can never be answered correctly.
+ */
+function isValidCorrectIndex(correctIndex: number, optionCount: number): boolean {
+  return Number.isInteger(correctIndex) && correctIndex >= 0 && correctIndex < optionCount;
+}
+
+function parseQuestions(children: ReactNode): ParsedQuizData {
+  const questionElements = Children.toArray(children).filter(isValidElement);
+  const questions: ParsedQuestion[] = [];
+  const errors: QuestionParseError[] = [];
+
+  questionElements.slice(0, MAX_QUESTIONS).forEach((el, index) => {
     const props = el.props as QuizQuestionProps;
     const correctIndex =
       typeof props.correctIndex === "string" ? Number.parseInt(props.correctIndex, 10) : props.correctIndex;
@@ -67,7 +99,20 @@ function parseQuestions(children: ReactNode): ParsedQuestion[] {
         return { label: optionProps.children, imageUrl: optionProps.imageUrl, imageAlt: optionProps.imageAlt };
       });
 
-    return {
+    if (!isValidCorrectIndex(correctIndex, options.length)) {
+      errors.push({
+        index,
+        reason: `correctIndex ${JSON.stringify(props.correctIndex)} isn't a valid option index for "${
+          props.question ?? "(missing question text)"
+        }" — this question has ${options.length} option${options.length === 1 ? "" : "s"} (valid range: 0–${Math.max(
+          options.length - 1,
+          0
+        )}).`,
+      });
+      return;
+    }
+
+    questions.push({
       question: props.question,
       correctIndex,
       correctExplanation: props.correctExplanation,
@@ -77,8 +122,71 @@ function parseQuestions(children: ReactNode): ParsedQuestion[] {
       explanationImageUrl: props.explanationImageUrl,
       explanationImageAlt: props.explanationImageAlt,
       options,
-    };
+    });
   });
+
+  return { questions, errors };
+}
+
+/**
+ * Same validation as parseQuestions, for the CMS/data-driven path
+ * (`<QuizSeries questions={...} />`) — one shared invariant, two entry
+ * points, so a CMS article's quiz can never silently misgrade any more
+ * than an MDX article's can.
+ */
+function normalizeQuestionData(data: QuizQuestionData[]): ParsedQuizData {
+  const questions: ParsedQuestion[] = [];
+  const errors: QuestionParseError[] = [];
+
+  data.slice(0, MAX_QUESTIONS).forEach((q, index) => {
+    if (!isValidCorrectIndex(q.correctIndex, q.options.length)) {
+      errors.push({
+        index,
+        reason: `correctIndex ${q.correctIndex} isn't a valid option index for "${q.question}" — this question has ${
+          q.options.length
+        } option${q.options.length === 1 ? "" : "s"} (valid range: 0–${Math.max(q.options.length - 1, 0)}).`,
+      });
+      return;
+    }
+
+    questions.push({
+      question: q.question,
+      correctIndex: q.correctIndex,
+      correctExplanation: q.correctExplanation,
+      incorrectExplanation: q.incorrectExplanation,
+      questionImageUrl: q.questionImageUrl,
+      questionImageAlt: q.questionImageAlt,
+      explanationImageUrl: q.explanationImageUrl,
+      explanationImageAlt: q.explanationImageAlt,
+      options: q.options.map((o) => ({ label: o.text, imageUrl: o.imageUrl, imageAlt: o.imageAlt })),
+    });
+  });
+
+  return { questions, errors };
+}
+
+/** Development-only, loudly visible — the previous bug required adding a temporary debug `console.log` during a real build to even notice. This renders in its place instead, so a malformed question is impossible to miss while writing or previewing an article. Never rendered in production; a broken question is simply omitted there rather than shown to readers. */
+function QuizConfigErrors({ errors, compact }: { errors: QuestionParseError[]; compact?: boolean }) {
+  return (
+    <div
+      role="alert"
+      className={cn(
+        "rounded-xl border border-error/40 bg-error/10 p-4 text-body-sm text-text-primary",
+        compact ? "mb-4" : "my-8"
+      )}
+    >
+      <p className="font-semibold text-error">
+        Quiz configuration {errors.length === 1 ? "issue" : "issues"} — visible in development only
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-text-secondary">
+        {errors.map((e) => (
+          <li key={e.index}>
+            Question {e.index + 1}: {e.reason}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 interface Answer {
@@ -101,8 +209,29 @@ function pickMessage(list: string[], seed: number): string {
   return list[seed % list.length]!;
 }
 
-export function QuizSeries({ children }: { children?: ReactNode }) {
-  const questions = useMemo(() => parseQuestions(children), [children]);
+export function QuizSeries({
+  children,
+  questions: questionsData,
+}: {
+  children?: ReactNode;
+  /**
+   * Data-driven alternative to `children` — for CMS-authored articles,
+   * whose body is plain Markdown with no MDX/JSX support (see
+   * lib/admin/render-markdown.ts), so their quiz lives as a structured
+   * field on the article document instead of inline `<QuizQuestion>`
+   * elements. app/topics/[slug]/page.tsx passes this directly for CMS
+   * articles; MDX articles keep authoring via `children` exactly as
+   * before — `children` is only parsed when `questions` is absent, so
+   * both paths share this one component instead of a second one.
+   */
+  questions?: QuizQuestionData[];
+}) {
+  const parsed = useMemo(
+    () =>
+      questionsData && questionsData.length > 0 ? normalizeQuestionData(questionsData) : parseQuestions(children),
+    [children, questionsData]
+  );
+  const questions = parsed.questions;
   const total = questions.length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -110,25 +239,22 @@ export function QuizSeries({ children }: { children?: ReactNode }) {
   const [selected, setSelected] = useState<number | null>(null);
   const [shakeIndex, setShakeIndex] = useState<number | null>(null);
   const [phase, setPhase] = useState<"question" | "results">("question");
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const continueMarkerRef = useRef<HTMLDivElement>(null);
   const handleRipple = useRipple();
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  useEffect(() => {
-    const stored = window.localStorage.getItem(SOUND_PREF_KEY);
-    if (stored === "1") setSoundEnabled(true);
-  }, []);
-
-  function toggleSound() {
-    setSoundEnabled((prev) => {
-      const next = !prev;
-      window.localStorage.setItem(SOUND_PREF_KEY, next ? "1" : "0");
-      return next;
-    });
+  if (total === 0) {
+    // Previously this was a silent `return null` no matter what went
+    // wrong, which is exactly why the original bug needed a temporary
+    // debug log during a real build to even notice. In development, a
+    // config problem is shown right where the quiz would be instead.
+    // Production still fails closed and silent — readers never see a
+    // broken quiz, just no quiz.
+    if (process.env.NODE_ENV !== "production" && parsed.errors.length > 0) {
+      return <QuizConfigErrors errors={parsed.errors} />;
+    }
+    return null;
   }
-
-  if (total === 0) return null;
 
   const current = questions[currentIndex]!;
   const isAnswered = selected !== null;
@@ -140,10 +266,13 @@ export function QuizSeries({ children }: { children?: ReactNode }) {
     const correct = optionIndex === current.correctIndex;
     setAnswers((prev) => [...prev, { selectedIndex: optionIndex, isCorrect: correct }]);
 
+    // Sound always plays now — it's still only ever triggered from this
+    // click handler, so the browser's "user gesture required" autoplay
+    // rule is already satisfied without a separate visible opt-in toggle.
     if (correct) {
-      if (soundEnabled) playCorrectSound();
+      playCorrectSound();
     } else {
-      if (soundEnabled) playIncorrectSound();
+      playIncorrectSound();
       setShakeIndex(optionIndex);
       setTimeout(() => setShakeIndex(null), 450);
     }
@@ -152,6 +281,7 @@ export function QuizSeries({ children }: { children?: ReactNode }) {
   function handleNext() {
     if (currentIndex + 1 >= total) {
       setPhase("results");
+      playCompletionSound();
       return;
     }
     setCurrentIndex((i) => i + 1);
@@ -186,20 +316,13 @@ export function QuizSeries({ children }: { children?: ReactNode }) {
           />
 
           <div className="relative flex flex-col gap-5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 rounded-full bg-accent-muted px-3 py-1 text-label font-semibold uppercase tracking-wide text-accent">
-                🧠 Knowledge Check
-              </span>
-              <button
-                type="button"
-                onClick={toggleSound}
-                aria-pressed={soundEnabled}
-                aria-label={soundEnabled ? "Mute quiz sound effects" : "Enable quiz sound effects"}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-border-subtle text-text-tertiary transition-colors duration-fast hover:text-text-primary"
-              >
-                {soundEnabled ? <SpeakerOnIcon /> : <SpeakerOffIcon />}
-              </button>
-            </div>
+            <span className="flex w-fit items-center gap-2 rounded-full bg-accent-muted px-3 py-1 text-label font-semibold uppercase tracking-wide text-accent">
+              🧠 Knowledge Check
+            </span>
+
+            {process.env.NODE_ENV !== "production" && parsed.errors.length > 0 && (
+              <QuizConfigErrors errors={parsed.errors} compact />
+            )}
 
             {phase === "question" ? (
               <>
@@ -398,20 +521,4 @@ export function QuizSeries({ children }: { children?: ReactNode }) {
   );
 }
 
-function SpeakerOnIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-      <path d="M2 6v4h2.5L8 12.5v-9L4.5 6H2Z" fill="currentColor" />
-      <path d="M10.5 5.5a4 4 0 0 1 0 5M12.3 3.7a6.5 6.5 0 0 1 0 8.6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
-function SpeakerOffIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-      <path d="M2 6v4h2.5L8 12.5v-9L4.5 6H2Z" fill="currentColor" />
-      <path d="M10.5 6.5 13.5 9.5M13.5 6.5 10.5 9.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}

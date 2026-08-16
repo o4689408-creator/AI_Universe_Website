@@ -8,6 +8,8 @@ import { TableOfContents } from "@/components/article/TableOfContents";
 import { AuthorBio } from "@/components/article/AuthorBio";
 import { ShareButtons } from "@/components/article/ShareButtons";
 import { DictionaryPopover } from "@/components/article/DictionaryPopover";
+import { ArticleImageGallery } from "@/components/article/ArticleImageGallery";
+import { QuizSeries } from "@/components/article/QuizSeries";
 import { SourcesList } from "@/components/article/SourcesList";
 import { RelatedTopics } from "@/components/article/RelatedTopics";
 import { ArticleNav } from "@/components/article/ArticleNav";
@@ -124,10 +126,18 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 <div className="prose-reading [&>div:first-child>p]:mt-0">{topic.content}</div>
               </DictionaryPopover>
 
+              <ArticleImageGallery images={topic.images} />
+
               <div className="mt-6 flex items-center justify-between border-t border-border-subtle pt-6">
                 <ShareButtons url={url} title={topic.title} />
                 <BookmarkButton slug={topic.slug} variant="labeled" />
               </div>
+
+              {topic.quiz && topic.quiz.length > 0 && (
+                <div className="mt-10 border-t border-border-subtle pt-10">
+                  <QuizSeries questions={topic.quiz} />
+                </div>
+              )}
 
               <AuthorBio author={topic.author} />
               <SourcesList sources={topic.sources} />

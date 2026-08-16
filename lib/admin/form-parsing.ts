@@ -1,4 +1,5 @@
 import type { ArticleInput } from "@/types/admin";
+import type { ArticleImage, QuizQuestionData } from "@/types/content";
 
 /**
  * Parses a <form>'s FormData into an ArticleInput. Kept dependency-free
@@ -7,6 +8,25 @@ import type { ArticleInput } from "@/types/admin";
  * reads the surrounding form's live FormData to build its payload) —
  * one field-name mapping, not two that could drift apart.
  */
+/**
+ * Parses a JSON array serialized into a hidden `<input>` by a
+ * data-driven field (ImageListField, QuizEditorField). Defaults to `[]`
+ * on anything unexpected — missing input, empty string, malformed JSON,
+ * or valid JSON that isn't an array — rather than throwing, so a
+ * corrupted value in one field can never take down the rest of a save.
+ * lib/admin/validation.ts is what actually enforces shape and bounds;
+ * this function's only job is "never crash the parse."
+ */
+function parseJsonArray(raw: FormDataEntryValue | null): unknown[] {
+  if (typeof raw !== "string" || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export function parseArticleFormData(formData: FormData): ArticleInput {
   const tagsRaw = String(formData.get("tags") ?? "");
   const readTimeRaw = formData.get("readTimeMinutes");
@@ -24,6 +44,8 @@ export function parseArticleFormData(formData: FormData): ArticleInput {
     content: String(formData.get("content") ?? ""),
     heroImageUrl: String(formData.get("heroImageUrl") ?? ""),
     featuredImageUrl: String(formData.get("featuredImageUrl") ?? "") || undefined,
+    images: parseJsonArray(formData.get("images")) as ArticleImage[],
+    quiz: parseJsonArray(formData.get("quiz")) as QuizQuestionData[],
     youtubeUrl: String(formData.get("youtubeUrl") ?? "") || undefined,
     authorId: String(formData.get("authorId") ?? "") || undefined,
     readTimeMinutes: readTimeRaw ? Number(readTimeRaw) : undefined,

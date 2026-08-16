@@ -1,5 +1,5 @@
 import type { ObjectId } from "mongodb";
-import type { SourceLink } from "@/types/content";
+import type { ArticleImage, QuizQuestionData, SourceLink } from "@/types/content";
 
 export type ArticleStatus = "draft" | "ready" | "scheduled" | "published";
 
@@ -25,6 +25,10 @@ export interface ArticleDoc {
   heroImageUrl: string;
   /** Optional — a second image used for card/OG contexts distinct from the in-article hero. Falls back to heroImageUrl when unset. */
   featuredImageUrl?: string;
+  /** Additional gallery images, 0–15 — see components/admin/editor/ImageListField.tsx. Always an array (never undefined) once a document has been saved through the current form; defaults to [] for articles created before this field existed. */
+  images: ArticleImage[];
+  /** Structured quiz questions, 0–10 — see components/admin/editor/QuizEditorField.tsx. Always an array for the same reason as `images`. */
+  quiz: QuizQuestionData[];
   /** Raw YouTube URL as pasted by the admin (any common URL shape). Parsed into a companion Video on read — see lib/admin/articles.ts#articleDocToTopicMeta. */
   youtubeUrl?: string;
   authorId: string;
@@ -61,6 +65,8 @@ export interface ArticleInput {
   content: string;
   heroImageUrl: string;
   featuredImageUrl?: string;
+  images?: ArticleImage[];
+  quiz?: QuizQuestionData[];
   youtubeUrl?: string;
   authorId?: string;
   readTimeMinutes?: number;

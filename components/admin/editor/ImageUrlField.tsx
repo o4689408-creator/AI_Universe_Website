@@ -27,7 +27,7 @@ export function ImageUrlField({
 }) {
   const [imgState, setImgState] = useState<"idle" | "loaded" | "error">("idle");
   const [checking, setChecking] = useState(false);
-  const [checkResult, setCheckResult] = useState<"ok" | "not-image" | "unreachable" | null>(null);
+  const [checkResult, setCheckResult] = useState<"ok" | "not-image" | "broken" | "blocked" | "timeout" | null>(null);
 
   async function validate() {
     if (!value.trim()) return;
@@ -35,9 +35,8 @@ export function ImageUrlField({
     setCheckResult(null);
     try {
       const result = await checkUrlAction(value.trim());
-      if (result.status !== "ok") setCheckResult("unreachable");
-      else if (result.isImage === false) setCheckResult("not-image");
-      else setCheckResult("ok");
+      if (result.status === "ok" && result.isImage === false) setCheckResult("not-image");
+      else setCheckResult(result.status);
     } finally {
       setChecking(false);
     }
@@ -94,7 +93,18 @@ export function ImageUrlField({
             {imgState === "loaded" && <span className="text-success">Loads correctly.</span>}
             {checkResult === "ok" && <p className="text-success">Confirmed a real image URL.</p>}
             {checkResult === "not-image" && <p className="text-warning">URL responds but isn&apos;t an image.</p>}
-            {checkResult === "unreachable" && <p className="text-error">URL didn&apos;t respond.</p>}
+            {checkResult === "broken" && (
+              <p className="text-error">The server responded with an error for this URL.</p>
+            )}
+            {checkResult === "timeout" && (
+              <p className="text-warning">
+                No response within 6 seconds — it may still work. The preview above (a real browser image load) is
+                the more reliable signal than this check.
+              </p>
+            )}
+            {checkResult === "blocked" && (
+              <p className="text-error">That address isn&apos;t allowed (private/local, or an unsupported protocol).</p>
+            )}
           </div>
         </div>
       )}

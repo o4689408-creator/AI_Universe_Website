@@ -52,3 +52,15 @@ export function playCorrectSound(): void {
 export function playIncorrectSound(): void {
   playTone(220, 0, 0.18, 0.045);
 }
+
+/**
+ * Quiz-finished celebration — a short ascending four-note flourish,
+ * distinct from the two-note correct-answer chime so it reads as a
+ * bigger, one-time moment rather than "another correct answer."
+ */
+export function playCompletionSound(): void {
+  playTone(523.25, 0, 0.18, 0.05);
+  playTone(659.25, 0.1, 0.18, 0.05);
+  playTone(783.99, 0.2, 0.18, 0.05);
+  playTone(1046.5, 0.3, 0.32, 0.06);
+}
