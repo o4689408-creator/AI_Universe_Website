@@ -1,5 +1,5 @@
 import { ObjectId, type Collection } from "mongodb";
-import { getDb, isMongoConfigured } from "@/lib/mongodb";
+import { getDb, isMongoConfigured, withDbRetry } from "@/lib/mongodb";
 import { listTopicSlugs } from "@/lib/mdx";
 import { slugify } from "@/lib/slugify";
 import { getAuthor } from "@/lib/authors";
@@ -53,13 +53,15 @@ function toObjectId(id: string): ObjectId | null {
 /** Builds a unique slug from a title, avoiding collisions with both existing MongoDB articles and the hand-authored .mdx slugs — checked once, together, so the two content sources can never collide. */
 async function generateUniqueSlug(title: string, excludeId?: string): Promise<string> {
   const base = slugify(title) || "article";
-  const collection = await getArticlesCollection();
 
-  const existingMongoSlugs = new Set(
-    (await collection.find({}, { projection: { slug: 1 } }).toArray())
-      .filter((doc) => !excludeId || doc._id.toString() !== excludeId)
-      .map((doc) => doc.slug)
-  );
+  const existingMongoSlugs = await withDbRetry(async () => {
+    const collection = await getArticlesCollection();
+    return new Set(
+      (await collection.find({}, { projection: { slug: 1 } }).toArray())
+        .filter((doc) => !excludeId || doc._id.toString() !== excludeId)
+        .map((doc) => doc.slug)
+    );
+  });
   const mdxSlugs = new Set(listTopicSlugs());
 
   if (!existingMongoSlugs.has(base) && !mdxSlugs.has(base)) return base;
@@ -73,17 +75,36 @@ async function generateUniqueSlug(title: string, excludeId?: string): Promise<st
 
 /** Whether a slug is free (used for the Admin form's live slug-availability check). */
 export async function isSlugAvailable(slug: string, excludeId?: string): Promise<boolean> {
-  const collection = await getArticlesCollection();
   const mdxSlugs = new Set(listTopicSlugs());
   if (mdxSlugs.has(slug)) return false;
 
-  const existing = await collection.findOne({ slug });
-  if (!existing) return true;
-  return Boolean(excludeId) && existing._id.toString() === excludeId;
+  return withDbRetry(async () => {
+    const collection = await getArticlesCollection();
+    const existing = await collection.findOne({ slug });
+    if (!existing) return true;
+    return Boolean(excludeId) && existing._id.toString() === excludeId;
+  });
 }
 
 function isDuplicateKeyError(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && (error as { code?: number }).code === 11000;
+}
+
+/**
+ * A duplicate-key error whose conflicting key is specifically this
+ * document's own `_id` means the document we're trying to insert
+ * *already exists* — almost certainly because a previous attempt with
+ * this exact same `doc` object actually succeeded on the server, but
+ * the connection died before we found out (see withDbRetry's doc
+ * comment in lib/mongodb.ts). That's success, not a conflict, and is
+ * different from a duplicate on `slug` with a *different* `_id`, which
+ * means someone else genuinely took that slug in the meantime.
+ */
+function isDuplicateOfOwnId(error: unknown, id: ObjectId): boolean {
+  if (!isDuplicateKeyError(error)) return false;
+  const keyValue = (error as { keyValue?: Record<string, unknown> }).keyValue;
+  const duplicateId = keyValue?._id;
+  return duplicateId instanceof ObjectId && duplicateId.equals(id);
 }
 
 /**
@@ -139,7 +160,6 @@ function isEffectivelyPublishedFilter(nowIso: string) {
 
 export async function createArticle(rawInput: ArticleInput, status: ArticleStatus): Promise<ArticleDoc> {
   const input = validateArticleInput(rawInput);
-  const collection = await getArticlesCollection();
 
   const slug = input.slug?.trim()
     ? input.slug.trim()
@@ -200,19 +220,36 @@ export async function createArticle(rawInput: ArticleInput, status: ArticleStatu
     scheduledFor,
   };
 
-  try {
-    await collection.insertOne(doc);
-  } catch (error) {
-    // The uniqueness pre-check above (generateUniqueSlug/isSlugAvailable)
-    // has an unavoidable TOCTOU race under real concurrent writes — the
-    // unique index on `slug` is the actual source of truth, and this is
-    // its failure mode surfacing as a clean error instead of a raw
-    // MongoServerError leaking up to the Admin form.
-    if (isDuplicateKeyError(error)) {
-      throw new Error(`The slug "${slug}" was just taken by another article. Please choose a different slug.`);
+  // withDbRetry re-runs this whole callback (including re-fetching the
+  // collection) against a fresh connection if the first attempt fails
+  // for any reason — see its doc comment in lib/mongodb.ts for why that
+  // matters for the SSL/publishing error this fixes. `doc` (and its
+  // `_id`) is built above, outside this boundary, specifically so a
+  // retry inserts the exact same document rather than a new one with a
+  // different generated `_id` — that's what makes isDuplicateOfOwnId
+  // below meaningful.
+  await withDbRetry(async () => {
+    const collection = await getArticlesCollection();
+    try {
+      await collection.insertOne(doc);
+    } catch (error) {
+      if (isDuplicateOfOwnId(error, doc._id)) {
+        // This exact document already exists — our own previous
+        // attempt actually succeeded and we only just found out.
+        // Nothing more to do.
+        return;
+      }
+      // The uniqueness pre-check above (generateUniqueSlug/isSlugAvailable)
+      // has an unavoidable TOCTOU race under real concurrent writes — the
+      // unique index on `slug` is the actual source of truth, and this is
+      // its failure mode surfacing as a clean error instead of a raw
+      // MongoServerError leaking up to the Admin form.
+      if (isDuplicateKeyError(error)) {
+        throw new Error(`The slug "${slug}" was just taken by another article. Please choose a different slug.`);
+      }
+      throw error;
     }
-    throw error;
-  }
+  });
 
   return doc;
 }
@@ -222,9 +259,11 @@ export async function updateArticle(id: string, rawInput: ArticleInput): Promise
   if (!objectId) throw new Error("Invalid article id.");
 
   const input = validateArticleInput(rawInput);
-  const collection = await getArticlesCollection();
 
-  const existing = await collection.findOne({ _id: objectId });
+  const existing = await withDbRetry(async () => {
+    const collection = await getArticlesCollection();
+    return collection.findOne({ _id: objectId });
+  });
   if (!existing) throw new Error("Article not found.");
 
   const slug = input.slug?.trim() ? input.slug.trim() : existing.slug;
@@ -268,12 +307,15 @@ export async function updateArticle(id: string, rawInput: ArticleInput): Promise
     applyOptionalField(setFields, unsetFields, field, input[field]);
   }
 
-  await collection.updateOne(
-    { _id: objectId },
-    Object.keys(unsetFields).length > 0
-      ? { $set: setFields, $unset: unsetFields }
-      : { $set: setFields }
-  ).catch((error) => {
+  await withDbRetry(async () => {
+    const collection = await getArticlesCollection();
+    return collection.updateOne(
+      { _id: objectId },
+      Object.keys(unsetFields).length > 0
+        ? { $set: setFields, $unset: unsetFields }
+        : { $set: setFields }
+    );
+  }).catch((error) => {
     if (isDuplicateKeyError(error)) {
       throw new Error(`The slug "${slug}" was just taken by another article. Please choose a different slug.`);
     }
@@ -310,7 +352,6 @@ export async function autosaveArticle(
   const title = partial.title?.trim();
   if (!title) return null;
 
-  const collection = await getArticlesCollection();
   const now = new Date().toISOString();
 
   const fields: Record<string, unknown> = {
@@ -337,10 +378,13 @@ export async function autosaveArticle(
   if (id) {
     const objectId = toObjectId(id);
     if (!objectId) return null;
-    await collection.updateOne(
-      { _id: objectId },
-      Object.keys(unsetFields).length > 0 ? { $set: fields, $unset: unsetFields } : { $set: fields }
-    );
+    await withDbRetry(async () => {
+      const collection = await getArticlesCollection();
+      return collection.updateOne(
+        { _id: objectId },
+        Object.keys(unsetFields).length > 0 ? { $set: fields, $unset: unsetFields } : { $set: fields }
+      );
+    });
     return { id, savedAt: now };
   }
 
@@ -357,9 +401,19 @@ export async function autosaveArticle(
   };
 
   try {
-    await collection.insertOne(doc);
+    await withDbRetry(async () => {
+      const collection = await getArticlesCollection();
+      await collection.insertOne(doc);
+    });
   } catch (error) {
-    if (isDuplicateKeyError(error)) return null; // exceedingly unlikely two autosaves race on the exact same generated slug
+    // Autosave is a best-effort background convenience, not a
+    // user-facing save — if this exact draft slug already exists
+    // (our own retry after a lost acknowledgment, or the exceedingly
+    // unlikely case of two autosaves racing on the same generated
+    // slug), quietly treat it as "nothing more to do" rather than
+    // surfacing an error over something the admin didn't explicitly
+    // trigger.
+    if (isDuplicateKeyError(error)) return null;
     throw error;
   }
 
@@ -374,8 +428,10 @@ export async function setArticleStatus(
   const objectId = toObjectId(id);
   if (!objectId) throw new Error("Invalid article id.");
 
-  const collection = await getArticlesCollection();
-  const existing = await collection.findOne({ _id: objectId });
+  const existing = await withDbRetry(async () => {
+    const collection = await getArticlesCollection();
+    return collection.findOne({ _id: objectId });
+  });
   if (!existing) throw new Error("Article not found.");
 
   if (status === "scheduled" && !scheduledFor?.trim()) {
@@ -394,11 +450,15 @@ export async function setArticleStatus(
     publishedAt: status === "published" && !existing.publishedAt ? now : existing.publishedAt,
   };
 
+  // This is the actual "Publish" button's write — the operation most
+  // directly implicated in the SSL/publishing error this fixes. Both
+  // branches below set specific field values (never increment/append),
+  // so retrying the whole thing against a fresh connection is safe.
   if (status === "scheduled") {
-    await collection.updateOne(
-      { _id: objectId },
-      { $set: { ...update, scheduledFor: scheduledFor!.trim() } }
-    );
+    await withDbRetry(async () => {
+      const collection = await getArticlesCollection();
+      return collection.updateOne({ _id: objectId }, { $set: { ...update, scheduledFor: scheduledFor!.trim() } });
+    });
     return { ...existing, ...update, scheduledFor: scheduledFor!.trim() };
   }
 
@@ -406,7 +466,10 @@ export async function setArticleStatus(
   // now-meaningless scheduledFor date rather than leave a stale one
   // sitting in the document (same $unset reasoning as every other
   // optional field — see the long comment on updateArticle).
-  await collection.updateOne({ _id: objectId }, { $set: update, $unset: { scheduledFor: "" } });
+  await withDbRetry(async () => {
+    const collection = await getArticlesCollection();
+    return collection.updateOne({ _id: objectId }, { $set: update, $unset: { scheduledFor: "" } });
+  });
   const cleared = { ...existing, ...update } as ArticleDoc;
   delete cleared.scheduledFor;
   return cleared;
@@ -417,12 +480,14 @@ export async function deleteArticle(id: string): Promise<{ slug: string } | null
   const objectId = toObjectId(id);
   if (!objectId) return null;
 
-  const collection = await getArticlesCollection();
-  const existing = await collection.findOne({ _id: objectId });
-  if (!existing) return null;
+  return withDbRetry(async () => {
+    const collection = await getArticlesCollection();
+    const existing = await collection.findOne({ _id: objectId });
+    if (!existing) return null;
 
-  await collection.deleteOne({ _id: objectId });
-  return { slug: existing.slug };
+    await collection.deleteOne({ _id: objectId });
+    return { slug: existing.slug };
+  });
 }
 
 export async function getArticleDocById(id: string): Promise<ArticleDoc | null> {

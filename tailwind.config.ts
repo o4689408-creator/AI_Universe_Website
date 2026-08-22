@@ -141,6 +141,16 @@ const config: Config = {
           "0%": { opacity: "0", boxShadow: "0 0 0 rgba(76,125,255,0)" },
           "100%": { opacity: "1", boxShadow: "var(--shadow-glow-accent)" },
         },
+        "fill-width": {
+          "0%": { width: "0%" },
+          "100%": { width: "100%" },
+        },
+        "bubble-rise": {
+          "0%": { transform: "translateY(0)", opacity: "0" },
+          "12%": { opacity: "1" },
+          "88%": { opacity: "1" },
+          "100%": { transform: "translateY(-130vh)", opacity: "0" },
+        },
       },
       animation: {
         "fade-up": "fade-up 500ms var(--ease-out) forwards",
@@ -154,6 +164,7 @@ const config: Config = {
         "shake-alt": "shake 450ms var(--ease-out)",
         "scale-in": "scale-in 350ms var(--ease-out) forwards",
         "glow-in": "glow-in 600ms var(--ease-out) forwards",
+        "quiz-auto-advance": "fill-width 3200ms linear forwards",
       },
     },
   },

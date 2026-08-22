@@ -1,5 +1,5 @@
 import { ObjectId, type Collection } from "mongodb";
-import { getDb, isMongoConfigured } from "@/lib/mongodb";
+import { getDb, isMongoConfigured, withDbRetry } from "@/lib/mongodb";
 import type { MediaDoc } from "@/types/admin";
 
 async function getMediaCollection(): Promise<Collection<MediaDoc>> {
@@ -15,6 +15,11 @@ function toObjectId(id: string): ObjectId | null {
   }
 }
 
+/** Same reasoning as lib/admin/tags.ts#escapeRegExp — a plain substring search shouldn't throw on regex-special characters typed into the search box. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export interface MediaListItem {
   id: string;
   url: string;
@@ -25,19 +30,33 @@ export interface MediaListItem {
 
 export async function listMedia(query?: string): Promise<MediaListItem[]> {
   if (!isMongoConfigured()) return [];
-  const collection = await getMediaCollection();
-  const filter = query?.trim()
-    ? { $or: [{ altText: { $regex: query.trim(), $options: "i" } }, { url: { $regex: query.trim(), $options: "i" } }] }
-    : {};
-
-  const docs = await collection.find(filter).sort({ createdAt: -1 }).toArray();
-  return docs.map((doc) => ({
-    id: doc._id.toString(),
-    url: doc.url,
-    altText: doc.altText,
-    caption: doc.caption,
-    createdAt: doc.createdAt,
-  }));
+  try {
+    const docs = await withDbRetry(async () => {
+      const collection = await getMediaCollection();
+      const filter = query?.trim()
+        ? {
+            $or: [
+              { altText: { $regex: escapeRegExp(query.trim()), $options: "i" } },
+              { url: { $regex: escapeRegExp(query.trim()), $options: "i" } },
+            ],
+          }
+        : {};
+      return collection.find(filter).sort({ createdAt: -1 }).toArray();
+    });
+    return docs.map((doc) => ({
+      id: doc._id.toString(),
+      url: doc.url,
+      altText: doc.altText,
+      caption: doc.caption,
+      createdAt: doc.createdAt,
+    }));
+  } catch (error) {
+    console.error("[lib/admin/media] MongoDB unreachable while listing media:", error);
+    if (process.env.NODE_ENV !== "production") {
+      throw error instanceof Error ? error : new Error(String(error));
+    }
+    return [];
+  }
 }
 
 export async function addMedia(input: { url: string; altText: string; caption?: string }): Promise<MediaDoc> {
@@ -52,7 +71,6 @@ export async function addMedia(input: { url: string; altText: string; caption?: 
     throw new Error("Enter a valid image URL.");
   }
 
-  const collection = await getMediaCollection();
   const doc: MediaDoc = {
     _id: new ObjectId(),
     url,
@@ -60,7 +78,10 @@ export async function addMedia(input: { url: string; altText: string; caption?: 
     caption: input.caption?.trim() || undefined,
     createdAt: new Date().toISOString(),
   };
-  await collection.insertOne(doc);
+  await withDbRetry(async () => {
+    const collection = await getMediaCollection();
+    await collection.insertOne(doc);
+  });
   return doc;
 }
 
@@ -74,24 +95,26 @@ export async function deleteMedia(id: string): Promise<void> {
   const objectId = toObjectId(id);
   if (!objectId) throw new Error("Invalid media id.");
 
-  const db = await getDb();
-  const collection = await getMediaCollection();
-  const existing = await collection.findOne({ _id: objectId });
-  if (!existing) throw new Error("Media item not found.");
+  await withDbRetry(async () => {
+    const db = await getDb();
+    const collection = await getMediaCollection();
+    const existing = await collection.findOne({ _id: objectId });
+    if (!existing) throw new Error("Media item not found.");
 
-  const inUse = await db.collection("articles").countDocuments({
-    $or: [
-      { heroImageUrl: existing.url },
-      { featuredImageUrl: existing.url },
-      { ogImageUrl: existing.url },
-      { twitterImageUrl: existing.url },
-    ],
+    const inUse = await db.collection("articles").countDocuments({
+      $or: [
+        { heroImageUrl: existing.url },
+        { featuredImageUrl: existing.url },
+        { ogImageUrl: existing.url },
+        { twitterImageUrl: existing.url },
+      ],
+    });
+    if (inUse > 0) {
+      throw new Error(
+        `This image is still used by ${inUse} article${inUse === 1 ? "" : "s"} — remove it from ${inUse === 1 ? "that article" : "those articles"} first.`
+      );
+    }
+
+    await collection.deleteOne({ _id: objectId });
   });
-  if (inUse > 0) {
-    throw new Error(
-      `This image is still used by ${inUse} article${inUse === 1 ? "" : "s"} — remove it from ${inUse === 1 ? "that article" : "those articles"} first.`
-    );
-  }
-
-  await collection.deleteOne({ _id: objectId });
 }

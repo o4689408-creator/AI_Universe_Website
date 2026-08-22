@@ -1,6 +1,7 @@
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
 import { AnimatedReveal } from "@/components/ui/AnimatedReveal";
+import { AmbientBubbles } from "@/components/ui/AmbientBubbles";
 import { ContentCard } from "@/components/content/ContentCard";
 import type { TopicMeta } from "@/types/content";
 
@@ -26,7 +27,8 @@ export function FeaturedTopicSection({ topics }: FeaturedTopicSectionProps) {
   if (!featured) return null;
 
   return (
-    <Section className="overflow-hidden">
+    <Section className="relative overflow-hidden">
+      <AmbientBubbles count={7} className="opacity-70" />
       <Container>
         <AnimatedReveal className="mb-6 flex flex-col gap-2">
           <span className="text-label uppercase text-accent">Featured</span>

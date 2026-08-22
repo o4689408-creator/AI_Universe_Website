@@ -1,5 +1,5 @@
 import { ObjectId, type Collection } from "mongodb";
-import { getDb, isMongoConfigured } from "@/lib/mongodb";
+import { getDb, isMongoConfigured, withDbRetry } from "@/lib/mongodb";
 import { slugify } from "@/lib/slugify";
 import { getAllTopics } from "@/lib/content";
 import type { CategoryDoc } from "@/types/admin";
@@ -10,7 +10,11 @@ async function getCategoriesCollection(): Promise<Collection<CategoryDoc>> {
   const db = await getDb();
   const collection = db.collection<CategoryDoc>("categories");
   if (!indexesEnsured) {
-    await collection.createIndex({ name: 1 }, { unique: true });
+    try {
+      await collection.createIndex({ name: 1 }, { unique: true });
+    } catch (error) {
+      console.error("[lib/admin/categories] Could not ensure unique index on categories.name:", error);
+    }
     indexesEnsured = true;
   }
   return collection;
@@ -41,11 +45,10 @@ export interface CategoryWithUsage {
 export async function listCategories(): Promise<CategoryWithUsage[]> {
   if (!isMongoConfigured()) return [];
   try {
-    const collection = await getCategoriesCollection();
-    const [categories, topics] = await Promise.all([
-      collection.find({}).sort({ name: 1 }).toArray(),
-      getAllTopics(),
-    ]);
+    const [categories, topics] = await withDbRetry(async () => {
+      const collection = await getCategoriesCollection();
+      return Promise.all([collection.find({}).sort({ name: 1 }).toArray(), getAllTopics()]);
+    });
 
     return categories.map((cat) => ({
       id: cat._id.toString(),
@@ -55,14 +58,19 @@ export async function listCategories(): Promise<CategoryWithUsage[]> {
       mdxUsageCount: topics.filter((t) => t.category === cat.name && t.source === "mdx").length,
     }));
   } catch (error) {
-    // Same reasoning as lib/admin/articles.ts's getPublishedArticlesAsTopicMetas:
-    // a genuinely unreachable MongoDB shouldn't hard-crash this page —
+    // A genuinely unreachable MongoDB shouldn't hard-crash this page —
     // this specifically also prevents a build-time failure while
     // Next.js's static-optimization pass is still deciding whether
     // /admin/categories needs to be dynamic (it does, via
     // requireAdminSession()'s cookies() call — but only gets to make
     // that determination if nothing throws first).
     console.error("[lib/admin/categories] MongoDB unreachable while listing categories:", error);
+    if (process.env.NODE_ENV !== "production") {
+      // See lib/admin/tags.ts#listTags for why this distinction matters:
+      // a real, configured-but-erroring database was previously
+      // indistinguishable from "you just have no categories yet".
+      throw error instanceof Error ? error : new Error(String(error));
+    }
     return [];
   }
 }
@@ -70,11 +78,13 @@ export async function listCategories(): Promise<CategoryWithUsage[]> {
 export async function createCategory(name: string): Promise<CategoryDoc> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Category name can't be empty.");
-  const collection = await getCategoriesCollection();
 
   const doc: CategoryDoc = { _id: new ObjectId(), name: trimmed, slug: slugify(trimmed), createdAt: new Date().toISOString() };
   try {
-    await collection.insertOne(doc);
+    await withDbRetry(async () => {
+      const collection = await getCategoriesCollection();
+      await collection.insertOne(doc);
+    });
   } catch (error) {
     if (isDuplicateKeyError(error)) throw new Error(`"${trimmed}" already exists as a category.`);
     throw error;
@@ -89,19 +99,27 @@ export async function renameCategory(id: string, newName: string): Promise<void>
   const trimmed = newName.trim();
   if (!trimmed) throw new Error("Category name can't be empty.");
 
-  const db = await getDb();
-  const categories = await getCategoriesCollection();
-  const existing = await categories.findOne({ _id: objectId });
-  if (!existing) throw new Error("Category not found.");
+  const oldName = await withDbRetry(async () => {
+    const categories = await getCategoriesCollection();
+    const existing = await categories.findOne({ _id: objectId });
+    if (!existing) throw new Error("Category not found.");
+    return existing.name;
+  });
 
-  try {
-    await categories.updateOne({ _id: objectId }, { $set: { name: trimmed, slug: slugify(trimmed) } });
-  } catch (error) {
-    if (isDuplicateKeyError(error)) throw new Error(`"${trimmed}" already exists as a category.`);
-    throw error;
-  }
+  await withDbRetry(async () => {
+    const categories = await getCategoriesCollection();
+    try {
+      await categories.updateOne({ _id: objectId }, { $set: { name: trimmed, slug: slugify(trimmed) } });
+    } catch (error) {
+      if (isDuplicateKeyError(error)) throw new Error(`"${trimmed}" already exists as a category.`);
+      throw error;
+    }
+  });
 
-  await db.collection("articles").updateMany({ category: existing.name }, { $set: { category: trimmed } });
+  await withDbRetry(async () => {
+    const db = await getDb();
+    await db.collection("articles").updateMany({ category: oldName }, { $set: { category: trimmed } });
+  });
 }
 
 /**
@@ -118,28 +136,36 @@ export async function deleteCategory(id: string, reassignTo?: string): Promise<v
   const objectId = toObjectId(id);
   if (!objectId) throw new Error("Invalid category id.");
 
-  const db = await getDb();
-  const categories = await getCategoriesCollection();
-  const existing = await categories.findOne({ _id: objectId });
-  if (!existing) throw new Error("Category not found.");
+  const categoryName = await withDbRetry(async () => {
+    const categories = await getCategoriesCollection();
+    const existing = await categories.findOne({ _id: objectId });
+    if (!existing) throw new Error("Category not found.");
+    return existing.name;
+  });
 
   const topics = await getAllTopics();
-  const mdxUsage = topics.filter((t) => t.category === existing.name && t.source === "mdx").length;
+  const mdxUsage = topics.filter((t) => t.category === categoryName && t.source === "mdx").length;
   if (mdxUsage > 0) {
     throw new Error(
-      `"${existing.name}" is still used by ${mdxUsage} hand-authored (.mdx) article${mdxUsage === 1 ? "" : "s"}, which can't be reassigned from here. Update those files' frontmatter first.`
+      `"${categoryName}" is still used by ${mdxUsage} hand-authored (.mdx) article${mdxUsage === 1 ? "" : "s"}, which can't be reassigned from here. Update those files' frontmatter first.`
     );
   }
 
-  const cmsUsage = topics.filter((t) => t.category === existing.name && t.source === "cms").length;
+  const cmsUsage = topics.filter((t) => t.category === categoryName && t.source === "cms").length;
   if (cmsUsage > 0) {
     if (!reassignTo?.trim()) {
       throw new Error(
-        `"${existing.name}" is used by ${cmsUsage} article${cmsUsage === 1 ? "" : "s"}. Choose a category to reassign them to before deleting.`
+        `"${categoryName}" is used by ${cmsUsage} article${cmsUsage === 1 ? "" : "s"}. Choose a category to reassign them to before deleting.`
       );
     }
-    await db.collection("articles").updateMany({ category: existing.name }, { $set: { category: reassignTo.trim() } });
+    await withDbRetry(async () => {
+      const db = await getDb();
+      await db.collection("articles").updateMany({ category: categoryName }, { $set: { category: reassignTo.trim() } });
+    });
   }
 
-  await categories.deleteOne({ _id: objectId });
+  await withDbRetry(async () => {
+    const categories = await getCategoriesCollection();
+    await categories.deleteOne({ _id: objectId });
+  });
 }

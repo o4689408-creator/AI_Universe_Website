@@ -171,7 +171,7 @@ export function ArticleForm({
       <section className="flex flex-col gap-5 rounded-xl border border-border-subtle bg-bg-surface-1/50 p-6 backdrop-blur-md">
         <h2 className="text-body-lg font-semibold text-text-primary">Content</h2>
 
-        <Field label="Title" htmlFor="title" error={state.fieldErrors?.title}>
+        <Field label="Title" htmlFor="title" hint="The main headline of the article." error={state.fieldErrors?.title}>
           <input
             id="title"
             name="title"
@@ -203,7 +203,7 @@ export function ArticleForm({
         </Field>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Subtitle" htmlFor="subtitle" error={state.fieldErrors?.subtitle}>
+          <Field label="Subtitle" htmlFor="subtitle" hint="One short sentence on what the reader will learn." error={state.fieldErrors?.subtitle}>
             <input
               id="subtitle"
               name="subtitle"
@@ -215,7 +215,7 @@ export function ArticleForm({
             />
           </Field>
 
-          <Field label="Category" htmlFor="category" error={state.fieldErrors?.category}>
+          <Field label="Category" htmlFor="category" hint="The main AI topic this article belongs to." error={state.fieldErrors?.category}>
             <input
               id="category"
               name="category"
@@ -251,7 +251,7 @@ export function ArticleForm({
           />
         </Field>
 
-        <Field label="Tags" htmlFor="tags" hint="Comma-separated">
+        <Field label="Tags" htmlFor="tags" hint="Comma-separated keywords readers may search for. Example: AI, LLMs, GPT, Agents">
           <input
             id="tags"
             name="tags"
